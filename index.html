@@ -102,11 +102,18 @@ canvas { display: block; width: 100%; height: 100%; }
 .play:active { transform: translateY(4px); box-shadow: 0 2px 0 #c99700; }
 .play:focus-visible, .name input:focus-visible, .ghost:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
-.tab { flex: 1; font-family: var(--display); font-size: 16px; color: #9fb0e0; background: #222b52; border: 0; border-radius: 12px; padding: 7px 6px; cursor: pointer; }
+.tab { flex: 1; font-family: var(--display); font-size: 15px; color: #9fb0e0; background: #222b52; border: 0; border-radius: 12px; padding: 7px 6px; cursor: pointer; }
 .tab.on { background: var(--teal); color: var(--ink); box-shadow: 0 3px 0 #1d8f85; }
 .src { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #9fb0e0; }
 .src.live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-right: 6px; vertical-align: 1px; }
 .tab:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.events { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.events .play { margin-top: 0; font-size: clamp(20px, 4.6vh, 27px); padding: 10px 6px; }
+.play.alt { background: var(--teal); box-shadow: 0 6px 0 #1d8f85; }
+.play.alt:active { box-shadow: 0 2px 0 #1d8f85; }
+.sub b { color: var(--sun); }
+.sub + .sub { margin-top: 6px; }
+.btn-go.cue { background: radial-gradient(circle at 35% 30%, #fff7b0, var(--sun) 60%); color: var(--ink); text-shadow: none; box-shadow: 0 6px 0 #c99700, 0 0 34px rgba(255,205,46,.9); animation: pulse .35s ease-in-out infinite; }
 .recs h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0 0 6px; color: #fff; }
 ol { list-style: none; margin: 0; padding: 0 4px 0 0; max-height: min(42vh, 280px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; scrollbar-width: thin; scrollbar-color: #4a5690 transparent; }
 li { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -135,18 +142,19 @@ li.fresh .r { color: #fff; }
 </style>
 
 <div id="stage">
-  <canvas id="cv" aria-label="Javelin stadium"></canvas>
+  <canvas id="cv" aria-label="Stadium"></canvas>
   <div class="hud">
     <div class="top">
       <div class="pips">
         <div class="pip" id="p0"><b>THROW 1</b><span>—</span></div>
         <div class="pip" id="p1"><b>THROW 2</b><span>—</span></div>
         <div class="pip" id="p2"><b>THROW 3</b><span>—</span></div>
+        <div class="pip" id="p3" hidden><b>TAP 3</b><span>—</span></div>
       </div>
       <div class="topr">
         <button class="ico" id="fsBtn" type="button" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
         <button class="ico" id="muteBtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
-        <div class="best"><b>BEST</b><span id="hudBest">—</span></div>
+        <div class="best"><b id="hudBestK">BEST</b><span id="hudBest">—</span></div>
       </div>
     </div>
     <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div></div>
@@ -163,34 +171,41 @@ li.fresh .r { color: #fff; }
       <h1 class="logo" id="mTitle">Javelin<br><em>Toss</em></h1>
       <p class="byline" id="byline">by Brooky</p>
       <div id="mIntro">
-        <p class="sub">Tap to start running. Your athlete speeds up all the way down the runway, and faster means further. Hold to raise the javelin, let go to launch. Throw late, at the perfect angle, but step over the line and it's a foul!</p>
+        <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
+        <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
       </div>
       <div id="mResults" hidden>
         <div class="stats">
-          <div class="stat"><b>BEST</b><div id="rBest">—</div></div>
-          <div class="stat"><b>AVERAGE</b><div id="rAvg">—</div></div>
+          <div class="stat"><b id="rBestK">BEST</b><div id="rBest">—</div></div>
+          <div class="stat"><b id="rAvgK">AVERAGE</b><div id="rAvg">—</div></div>
         </div>
         <div class="series" id="rSeries"></div>
       </div>
       <p class="tip" id="iosTip" hidden>For full screen on iPhone: tap Share, then Add to Home Screen, and play from the new icon.</p>
       <label class="name" for="pname">PLAYER <input id="pname" maxlength="14" value="Player" autocomplete="off"></label>
-      <button class="play" id="play" type="button">PLAY</button>
+      <div class="events">
+        <button class="play" id="play" type="button">JAVELIN</button>
+        <button class="play alt" id="playSprint" type="button">100M SPRINT</button>
+      </div>
     </div>
     <div class="recs">
       <div class="tabs" role="tablist">
-        <button class="tab on" id="tabThrow" type="button" role="tab" aria-selected="true">Longest throw</button>
-        <button class="tab" id="tabAvg" type="button" role="tab" aria-selected="false">Best average</button>
+        <button class="tab on" id="tabThrow" type="button" role="tab" aria-selected="true">Throw</button>
+        <button class="tab" id="tabAvg" type="button" role="tab" aria-selected="false">Throw avg</button>
+        <button class="tab" id="tabSpr" type="button" role="tab" aria-selected="false">100m</button>
       </div>
       <p class="src" id="src">Scores on this device</p>
       <ol id="list"></ol>
       <ol id="listAvg" hidden></ol>
+      <ol id="listSpr" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 1.8</p>
+      <p class="ver">Version 2.0</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
           <button class="ghost" id="resetThrow" type="button">Reset longest throw</button>
           <button class="ghost" id="resetAvg" type="button">Reset averages</button>
+          <button class="ghost" id="resetSpr" type="button">Reset 100m</button>
         </span>
         <p class="adminMsg" id="adminMsg" hidden></p>
       </div>
@@ -227,7 +242,7 @@ li.fresh .r { color: #fff; }
   let state = "menu";   // menu | ready | running | charging | flight | landed
   let throws = [], ax = RUN_START, aSpeed = 0, angle = 0, jav = null;
   let camX = 0, ppm = 40, shake = 0, time = 0, dustT = 0, freshIdx = -1;
-  let parts = [], trail = [], stepIdx = 0;
+  let parts = [], trail = [], stepIdx = 0, mode = "javelin";
 
   // ---------- HUD
   function setPrompt(t, pulse) { $("prompt").textContent = t; $("prompt").classList.toggle("pulse", !!pulse); }
@@ -241,6 +256,10 @@ li.fresh .r { color: #fff; }
   function best() { const v = throws.filter(t => t !== null); return v.length ? Math.max(...v) : null; }
   function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
   function renderHud() {
+    $("p3").hidden = mode !== "sprint";
+    if (mode === "sprint") { renderSprintHud(); return; }
+    $("hudBestK").textContent = "BEST";
+    for (let i = 0; i < 3; i++) $("p" + i).querySelector("b").textContent = "THROW " + (i + 1);
     for (let i = 0; i < 3; i++) {
       const p = $("p" + i), t = throws[i];
       p.querySelector("span").textContent = t === undefined ? "—" : t === null ? "FOUL" : t.toFixed(2);
@@ -256,7 +275,7 @@ li.fresh .r { color: #fff; }
     state = "ready"; $("toast").hidden = true;
     setPrompt("TAP TO RUN", true); setGo("RUN"); renderHud();
   }
-  function startGame() { throws = []; freshIdx = -1; freshAvg = -1; freshIds[KEY] = freshIds[KEY_AVG] = null; $("menu").hidden = true; newThrow(); }
+  function startGame() { mode = "javelin"; throws = []; freshIdx = -1; freshAvg = -1; freshIds[KEY] = freshIds[KEY_AVG] = null; $("menu").hidden = true; newThrow(); }
   function startRun() { state = "running"; aSpeed = 0; setPrompt("HOLD TO AIM"); setGo("HOLD"); }
   function startCharge() { state = "charging"; angle = 0; $("go").classList.add("held"); setPrompt("LET GO TO THROW!"); }
   function release() {
@@ -297,9 +316,13 @@ li.fresh .r { color: #fff; }
   function showMenu(results) {
     state = "menu"; $("toast").hidden = true;
     $("mIntro").hidden = results; $("byline").hidden = results; $("mResults").hidden = !results;
-    $("mTitle").innerHTML = results ? "Final<br><em>Results</em>" : "Javelin<br><em>Toss</em>";
-    $("play").textContent = results ? "PLAY AGAIN" : "PLAY";
-    if (results) {
+    $("mTitle").innerHTML = !results ? "Javelin<br><em>Toss</em>" : mode === "sprint" ? "Race<br><em>Results</em>" : "Final<br><em>Results</em>";
+    $("rBestK").textContent = mode === "sprint" ? "TIME" : "BEST"; $("rAvgK").textContent = mode === "sprint" ? "PLACE" : "AVERAGE";
+    if (results && mode === "sprint") {
+      $("rBest").textContent = S.dq ? "DQ" : S.time.toFixed(2) + " s";
+      $("rAvg").textContent = S.dq ? "—" : ["1st", "2nd", "3rd", "4th"][S.place - 1];
+      $("rSeries").textContent = S.dq ? "False start: disqualified" : "Reactions: " + S.rts.map(r => r === null ? "miss" : r.toFixed(2)).join("  ·  ");
+    } else if (results) {
       const b = best(), a = avg();
       $("rBest").textContent = b === null ? "—" : b.toFixed(2) + " m";
       $("rAvg").textContent = a === null ? "—" : a.toFixed(2) + " m";
@@ -310,7 +333,8 @@ li.fresh .r { color: #fff; }
   }
 
   // ---------- records: shared online board (Firebase) with this-device fallback
-  const KEY_AVG = KEY + "-avg";
+  const KEY_AVG = KEY + "-avg", KEY_SPR = KEY + "-sprint";
+  const ASC = { [KEY_SPR]: true };
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
     authDomain: "javelin-toss-fe81d.firebaseapp.com",
@@ -319,14 +343,15 @@ li.fresh .r { color: #fff; }
     messagingSenderId: "310679295817",
     appId: "1:310679295817:web:65a93e4940e62a5ae5ac98"
   };
-  const COLL = { [KEY]: "throws", [KEY_AVG]: "averages" };
-  let freshAvg = -1, tab = "throw", fdb = null, online = false, netErr = "";
-  const remote = { [KEY]: [], [KEY_AVG]: [] }, freshIds = { [KEY]: null, [KEY_AVG]: null };
+  const COLL = { [KEY]: "throws", [KEY_AVG]: "averages", [KEY_SPR]: "sprints" };
+  let anyOk = false, freshAvg = -1, freshSpr = -1, tab = "throw", fdb = null, online = false, netErr = "";
+  const remote = { [KEY]: [], [KEY_AVG]: [], [KEY_SPR]: [] }, freshIds = { [KEY]: null, [KEY_AVG]: null, [KEY_SPR]: null };
+  const better = (k, a, b) => ASC[k] ? a <= b : a >= b;
 
   function playerName() { return ($("pname").value.trim() || "Player").slice(0, 14); }
   function loadLocal(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } }
   function addLocal(k, e) {
-    const recs = loadLocal(k); recs.push(e); recs.sort((a, b) => b.d - a.d);
+    const recs = loadLocal(k); recs.push(e); recs.sort((a, b) => ASC[k] ? a.d - b.d : b.d - a.d);
     const top = recs.slice(0, 100);
     try { localStorage.setItem(k, JSON.stringify(top)); } catch (_) {}
     return top.indexOf(e);
@@ -336,16 +361,16 @@ li.fresh .r { color: #fff; }
     const e = { n: playerName(), d, t: Date.now() };
     const localRank = addLocal(k, e);
     if (!online) return localRank;
-    const rank = remote[k].filter(r => r.d >= d).length;
+    const rank = remote[k].filter(r => better(k, r.d, d)).length;
     const ref = fdb.collection(COLL[k]).doc();
     freshIds[k] = ref.id;
     ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => { netErr = "save: " + (err.code || err.message); renderRecords(); });
     return rank < 100 ? rank : -1;
   }
-  function rankOf(k, d) { return (online ? remote[k] : loadLocal(k)).filter(r => r.d >= d).length; }
+  function rankOf(k, d) { return (online ? remote[k] : loadLocal(k)).filter(r => better(k, r.d, d)).length; }
   function fillList(el, recs, k) {
     el.innerHTML = "";
-    const freshLocal = k === KEY ? freshIdx : freshAvg;
+    const freshLocal = k === KEY ? freshIdx : k === KEY_AVG ? freshAvg : freshSpr;
     recs.forEach((r, i) => {
       const li = document.createElement("li");
       if (online ? (r.id && r.id === freshIds[k]) : i === freshLocal) li.className = "fresh";
@@ -355,13 +380,14 @@ li.fresh .r { color: #fff; }
     });
   }
   function renderRecords() {
-    const a = online ? remote[KEY] : loadLocal(KEY), b = online ? remote[KEY_AVG] : loadLocal(KEY_AVG);
-    fillList($("list"), a, KEY); fillList($("listAvg"), b, KEY_AVG);
-    $("list").hidden = tab !== "throw"; $("listAvg").hidden = tab !== "avg";
-    $("tabThrow").classList.toggle("on", tab === "throw"); $("tabAvg").classList.toggle("on", tab === "avg");
-    $("tabThrow").setAttribute("aria-selected", tab === "throw"); $("tabAvg").setAttribute("aria-selected", tab === "avg");
-    const cur = tab === "throw" ? a : b;
-    $("empty").textContent = tab === "throw" ? "No records yet. Be the first!" : "Finish all three throws to post an average.";
+    const get = k => online ? remote[k] : loadLocal(k);
+    const a = get(KEY), b = get(KEY_AVG), c = get(KEY_SPR);
+    fillList($("list"), a, KEY); fillList($("listAvg"), b, KEY_AVG); fillList($("listSpr"), c, KEY_SPR);
+    [["list", "tabThrow", "throw"], ["listAvg", "tabAvg", "avg"], ["listSpr", "tabSpr", "spr"]].forEach(([l, t, v]) => {
+      $(l).hidden = tab !== v; $(t).classList.toggle("on", tab === v); $(t).setAttribute("aria-selected", tab === v);
+    });
+    const cur = tab === "throw" ? a : tab === "avg" ? b : c;
+    $("empty").textContent = tab === "throw" ? "No records yet. Be the first!" : tab === "avg" ? "Finish all three throws to post an average." : "No races yet. Be the first!";
     $("empty").hidden = cur.length > 0;
     $("src").textContent = online ? "Everyone's scores, live" + (netErr ? " (" + netErr + ")" : "") : "Scores on this device" + (netErr ? " (online board: " + netErr + ")" : "");
     $("src").classList.toggle("live", online);
@@ -371,17 +397,18 @@ li.fresh .r { color: #fff; }
       if (!window.firebase) { netErr = "library didn't load"; return; }
       firebase.initializeApp(FIREBASE_CONFIG);
       fdb = firebase.firestore();
-      [KEY, KEY_AVG].forEach(k => {
-        fdb.collection(COLL[k]).orderBy("d", "desc").limit(100).onSnapshot(snap => {
+      [KEY, KEY_AVG, KEY_SPR].forEach(k => {
+        fdb.collection(COLL[k]).orderBy("d", ASC[k] ? "asc" : "desc").limit(100).onSnapshot(snap => {
           remote[k] = snap.docs.map(doc => ({ id: doc.id, n: String(doc.get("n") || "Player"), d: Number(doc.get("d")) || 0 }));
-          online = true; renderRecords();
-        }, err => { online = false; netErr = err.code || err.message || "error"; renderRecords(); });
+          online = true; anyOk = true; renderRecords();
+        }, err => { netErr = COLL[k] + ": " + (err.code || err.message || "error"); if (!anyOk) online = false; renderRecords(); });
       });
     } catch (e) { online = false; netErr = e.code || e.message || "error"; }
   }
   connect();
   $("tabThrow").addEventListener("click", () => { tab = "throw"; renderRecords(); });
   $("tabAvg").addEventListener("click", () => { tab = "avg"; renderRecords(); });
+  $("tabSpr").addEventListener("click", () => { tab = "spr"; renderRecords(); });
 
   // ---------- owner-only reset (Google sign-in; the database rules only let the owner delete)
   function adminMsg(t) { $("adminMsg").textContent = t; $("adminMsg").hidden = !t; }
@@ -400,7 +427,7 @@ li.fresh .r { color: #fff; }
       if (isAdmin) { auth.signOut(); adminMsg(""); return; }
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => adminMsg("Sign-in failed: " + (err.code || err.message)));
     });
-    [["resetThrow", KEY, "longest throw"], ["resetAvg", KEY_AVG, "average"]].forEach(([id, k, label]) => {
+    [["resetThrow", KEY, "longest throw"], ["resetAvg", KEY_AVG, "average"], ["resetSpr", KEY_SPR, "100m"]].forEach(([id, k, label]) => {
       let armT;
       const b = $(id), orig = b.textContent;
       b.addEventListener("click", async () => {
@@ -427,6 +454,7 @@ li.fresh .r { color: #fff; }
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
   $("play").addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); startGame(); });
+  $("playSprint").addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); startSprint(); });
 
   // ---------- full screen + sound buttons
   const fsEl = document.documentElement;
@@ -540,6 +568,20 @@ li.fresh .r { color: #fff; }
           noise(st, 0.03 + Math.random() * 0.02, "bandpass", 1500 + Math.random() * 1500, 1.5, 0.12 + Math.random() * 0.12, 0.002);
         }
       },
+      gun() {
+        if (!ok()) return; const t = ac.currentTime;
+        noise(t, 0.35, "highpass", 900, 0.7, 1.0, 0.001);
+        noise(t, 0.25, "lowpass", 400, 0.7, 0.8, 0.001);
+        tone(t, 0.25, "sine", 120, 40, 0.8);
+      },
+      beep() {
+        if (!ok()) return; const t = ac.currentTime;
+        tone(t, 0.12, "square", 1175, 1175, 0.16); tone(t + 0.13, 0.1, "square", 1568, 1568, 0.14);
+      },
+      stumble() {
+        if (!ok()) return; const t = ac.currentTime;
+        noise(t, 0.16, "lowpass", 500, 0.8, 0.5, 0.004); tone(t, 0.2, "sine", 160, 70, 0.5);
+      },
       groan() {
         if (!ok()) return; const t = ac.currentTime, dur = 1.6;
         const voice = formant(null, [[720, 5, 1.3], [1150, 6, 0.8], [2600, 6, 0.2]]);
@@ -557,11 +599,12 @@ li.fresh .r { color: #fff; }
   // ---------- input
   function press() {
     sfx.unlock();
+    if (mode === "sprint") { sprintPress(); return; }
     if (state === "ready") startRun();
     else if (state === "running") startCharge();
     else if (state === "landed") { if (throws.length >= 3) showMenu(true); else newThrow(); }
   }
-  function unpress() { if (state === "charging") release(); }
+  function unpress() { if (mode === "javelin" && state === "charging") release(); }
   stage.addEventListener("pointerdown", e => { if (e.button > 0) return; e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {} press(); });
   stage.addEventListener("pointerup", e => { e.preventDefault(); unpress(); });
   stage.addEventListener("pointercancel", unpress);
@@ -578,6 +621,7 @@ li.fresh .r { color: #fff; }
   }
   function update(dt) {
     time += dt;
+    if (mode === "sprint") { sprintUpdate(dt); return; }
     if (state === "running" || state === "charging") {
       aSpeed += ACC * dt; ax += aSpeed * dt;
       const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
@@ -614,6 +658,233 @@ li.fresh .r { color: #fff; }
     const k = snap ? 1 : 1 - Math.exp(-dt * 4);
     ppm += (tp - ppm) * (snap ? 1 : k * .8);
     camX += (tx - camX) * k;
+  }
+
+  // ---------- 100m sprint
+  const SP = { VB: 9.2, START_B: 3.4, CUE_B: 2.8, DECAY: 2.4, MAXB: 4.6, WINDOW: 1.0, GUN_WAIT: 1.0 };
+  const quick = rt => Math.max(0, Math.min(1, (0.55 - rt) / 0.40));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const RIVAL_KITS = ["#e8443a", "#f2b21b", "#8a4fd8"];
+  const S = { x: 0, v: 0, boost: 0, t: 0, started: false, timer: 0, setDelay: 1.5, cueD: [], ci: 0, cueAt: null, rts: [], rivals: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, lastClock: "" };
+
+  function resetSprint() {
+    Object.assign(S, { x: 0, v: 0, boost: 0, t: 0, started: false, timer: 0, ci: 0, cueAt: null, rts: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, lastClock: "" });
+    // three reaction cues, one in each part of the race, never in the same spots twice
+    S.cueD = [rand(16, 34), rand(42, 62), rand(70, 90)];
+    S.rivals = RIVAL_KITS.map(kit => ({
+      kit, x: 0, v: 0, boost: 0, started: false, ci: 0, pendAt: null, time: null,
+      rts: [rand(0.13, 0.3), rand(0.16, 0.42), rand(0.16, 0.42), rand(0.16, 0.42)]
+    }));
+    parts = []; stepIdx = 0; aSpeed = 0;
+  }
+  function startSprint() {
+    mode = "sprint"; freshSpr = -1; freshIds[KEY_SPR] = null;
+    $("menu").hidden = true; $("toast").hidden = true;
+    resetSprint(); state = "sready";
+    setPrompt("TAP TO GO TO YOUR MARKS", true); setGo("GO"); renderHud();
+  }
+  function setCue(on) { $("go").classList.toggle("cue", on); }
+  function say(t) { S.msg = t; S.msgT = 1.3; }
+  function playerGo(rt) {
+    S.started = true; S.rts.push(rt);
+    S.boost = SP.START_B * quick(rt);
+    state = "srace"; setCue(false); setGo(""); setPrompt("");
+    say(reactWord(rt) + "  " + rt.toFixed(2));
+    renderHud();
+  }
+  function reactWord(rt) { return rt < .17 ? "LIGHTNING!" : rt < .24 ? "GREAT!" : rt < .33 ? "GOOD" : rt < .45 ? "OK" : "SLOW"; }
+  function falseStart() {
+    S.dq = true; state = "sdone"; setGo(""); setPrompt(""); shake = .25;
+    sfx.groan();
+    showToast("FALSE START!", "Disqualified", "TAP FOR RESULTS", true);
+  }
+  function sprintPress() {
+    if (state === "sready") { state = "smarks"; S.timer = 0; setPrompt("ON YOUR MARKS"); setGo(""); }
+    else if (state === "smarks" || state === "sset") falseStart();
+    else if (state === "sgun") playerGo(S.t);
+    else if (state === "srace") {
+      if (S.cueAt !== null) {
+        const rt = S.t - S.cueAt; S.rts.push(rt); S.cueAt = null;
+        S.boost = Math.min(SP.MAXB, S.boost + SP.CUE_B * quick(rt));
+        setCue(false); setGo(""); setPrompt("");
+        say(reactWord(rt) + "  " + rt.toFixed(2)); renderHud();
+      } else if (S.time === null) {
+        S.v *= 0.8; S.boost *= 0.5; shake = .15; sfx.stumble(); say("STUMBLE!");
+      }
+    } else if (state === "sdone") showMenu(true);
+  }
+  function stepRunner(r, dt, sinceStart) {
+    const tau = sinceStart < 2.5 ? 0.8 : 0.45;
+    if (r.time !== null) { r.v = Math.max(0, r.v - 5 * dt); r.boost = 0; }
+    else { r.v += (SP.VB + r.boost - r.v) / tau * dt; r.boost *= Math.exp(-dt / SP.DECAY); }
+    const prev = r.x; r.x += r.v * dt;
+    if (r !== S && r.time === null && r.x >= 100) r.time = S.t - dt + dt * (100 - prev) / Math.max(1e-6, r.x - prev);
+  }
+  function sprintFinish() {
+    state = "sdone"; setCue(false); setGo(""); setPrompt("");
+    S.place = 1 + S.rivals.filter(r => r.time !== null && r.time < S.time).length;
+    const time = Math.round(S.time * 100) / 100; S.time = time;
+    const rec = rankOf(KEY_SPR, time) === 0;
+    freshSpr = addRecord(KEY_SPR, time); tab = "spr";
+    const word = rec ? "NEW RECORD!" : S.place === 1 ? "WINNER!" : S.place === 2 ? "2ND PLACE" : S.place === 3 ? "3RD PLACE" : "4TH PLACE";
+    showToast(word, time.toFixed(2) + " s", "TAP FOR RESULTS");
+    const q = Math.max(0, Math.min(1, (12.6 - time) / 3.1));
+    setTimeout(() => sfx.cheer(q, rec), 120);
+    renderHud();
+  }
+  function sprintUpdate(dt) {
+    if (state === "smarks") {
+      S.timer += dt;
+      if (S.timer > 1.4) { state = "sset"; S.timer = 0; S.setDelay = rand(1.0, 2.8); setPrompt("SET…"); }
+    } else if (state === "sset") {
+      S.timer += dt;
+      if (S.timer >= S.setDelay) { state = "sgun"; S.t = 0; S.flash = .25; sfx.gun(); setPrompt("GO!"); setGo("TAP!"); setCue(true); }
+    }
+    const racing = state === "sgun" || state === "srace" || (state === "sdone" && !S.dq);
+    if (racing) {
+      S.t += dt;
+      if (state === "sgun" && S.t >= SP.GUN_WAIT) playerGo(SP.GUN_WAIT);
+      // player
+      if (S.started) {
+        const prevX = S.x;
+        stepRunner(S, dt, S.t - S.rts[0]);
+        if (S.ci < 3 && S.x >= S.cueD[S.ci] && S.time === null) {
+          S.ci++; S.cueAt = S.t; sfx.beep(); setGo("TAP!"); setCue(true); setPrompt("TAP!");
+        }
+        if (S.cueAt !== null && S.t - S.cueAt > SP.WINDOW) {
+          S.cueAt = null; S.rts.push(null); setCue(false); setGo(""); setPrompt(""); say("MISSED!"); renderHud();
+        }
+        const si = Math.floor(S.x * 1.05); if (si !== stepIdx && S.v > 0.5) { stepIdx = si; sfx.step(S.v); puff(S.x - .2, .05, 1, 1.5, "#e98a6c"); }
+        if (S.time === null && S.x >= 100) {
+          S.time = S.t - dt + dt * (100 - prevX) / Math.max(1e-6, S.x - prevX);
+          if (S.cueAt !== null) { S.cueAt = null; }
+          sprintFinish();
+        }
+      }
+      // rivals
+      S.rivals.forEach(r => {
+        if (!r.started) { if (S.t >= r.rts[0]) { r.started = true; r.boost = SP.START_B * quick(r.rts[0]); } else return; }
+        if (r.ci < 3 && r.x >= S.cueD[r.ci]) { r.pendAt = S.t + r.rts[r.ci + 1]; r.ci++; }
+        if (r.pendAt !== null && S.t >= r.pendAt) { r.boost = Math.min(SP.MAXB, r.boost + SP.CUE_B * quick(r.rts[r.ci])); r.pendAt = null; }
+        stepRunner(r, dt, S.t - r.rts[0]);
+      });
+      if (state === "srace" && S.time === null) {
+        const c = S.t.toFixed(2); if (c !== S.lastClock) { S.lastClock = c; $("hudBest").textContent = c; }
+      }
+    }
+    aSpeed = S.v;
+    S.msgT = Math.max(0, S.msgT - dt); S.flash = Math.max(0, S.flash - dt);
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= 4 * dt; p.life -= dt * 1.6; if (p.y < 0) p.y = 0; });
+    parts = parts.filter(p => p.life > 0);
+    shake = Math.max(0, shake - dt);
+    // camera: follow the player, a little left of centre
+    const tp = Math.min(H / 8.5, W / 16);
+    const tx = Math.max(S.x, 0) + (W / tp) * 0.15;
+    const snap = state === "sready" || state === "menu";
+    const k = snap ? 1 : 1 - Math.exp(-dt * 6);
+    ppm += (tp - ppm) * (snap ? 1 : k); camX += (tx - camX) * k;
+  }
+  function renderSprintHud() {
+    $("hudBestK").textContent = "TIME";
+    $("hudBest").textContent = S.time !== null ? S.time.toFixed(2) : S.started ? S.t.toFixed(2) : "0.00";
+    ["START", "TAP 1", "TAP 2", "TAP 3"].forEach((lab, i) => {
+      const p = $("p" + i), r = S.rts[i];
+      p.querySelector("b").textContent = lab;
+      p.querySelector("span").textContent = r === undefined ? "—" : r === null ? "MISS" : r.toFixed(2);
+      p.classList.toggle("foul", r === null);
+      p.classList.toggle("now", i === S.rts.length && state !== "menu" && !S.dq && S.time === null);
+    });
+  }
+  function drawRunner(x, base, u, ph, moving, kit, pose) {
+    const P = (dx, y) => [x + dx * u, base - y * u];
+    const limb = "#3b2a22";
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.fillStyle = "rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(x, base + 2, .4 * u, .07 * u, 0, 0, 7); ctx.fill();
+    let hip, sh, head, legs, arms;
+    if (pose) { // in the blocks: 1 = on your marks, 2 = set
+      const up = pose === 2 ? .2 : 0;
+      hip = P(-.15, .5 + up); sh = P(.38, .55); head = P(.58, .58);
+      legs = [[P(.15, .32 + up * .4), P(.02, 0)], [P(-.42, .28 + up * .6), P(-.6, 0)]];
+      arms = [P(.4, 0), P(.36, 0)];
+    } else {
+      const sw = moving ? Math.sin(ph) : 0, b = moving ? Math.abs(Math.cos(ph)) * .06 : 0;
+      hip = P(0, .95 + b); sh = P(.22, 1.45 + b); head = P(.3, 1.67 + b);
+      legs = [sw, -sw].map((s2, i) => [P(.3 * s2 + .08, .5 + b + (s2 > 0 ? .12 * s2 : 0)), P(.5 * s2 - .06, Math.max(0, .16 * Math.sin(ph + i * Math.PI)))]);
+      arms = [P(.22 + .38 * sw, 1.1 + b + .12 * Math.abs(sw)), P(.22 - .38 * sw, 1.1 + b + .12 * Math.abs(sw))];
+    }
+    legs.forEach(([knee, foot], i) => {
+      ctx.strokeStyle = i ? "#2a1d17" : limb; ctx.lineWidth = Math.max(4, u * .13);
+      ctx.beginPath(); ctx.moveTo(...hip); ctx.lineTo(...knee); ctx.lineTo(...foot); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(foot[0] + .05 * u, foot[1], u * .07, 0, 7); ctx.fill();
+    });
+    ctx.strokeStyle = "#1b2340"; ctx.lineWidth = Math.max(7, u * .24);
+    const mid = [hip[0] + (sh[0] - hip[0]) * .25, hip[1] + (sh[1] - hip[1]) * .25];
+    ctx.beginPath(); ctx.moveTo(...hip); ctx.lineTo(...mid); ctx.stroke();
+    ctx.strokeStyle = kit; ctx.lineWidth = Math.max(8, u * .26);
+    ctx.beginPath(); ctx.moveTo(...mid); ctx.lineTo(...sh); ctx.stroke();
+    ctx.fillStyle = limb; ctx.beginPath(); ctx.arc(head[0], head[1], .14 * u, 0, 7); ctx.fill();
+    ctx.strokeStyle = limb; ctx.lineWidth = Math.max(3.5, u * .1);
+    arms.forEach(a => { ctx.beginPath(); ctx.moveTo(...sh); ctx.lineTo(...a); ctx.stroke(); });
+  }
+  function drawSprint(sx, gy) {
+    const band = H - gy, top = gy + band * .06, laneH = (band * .94) / 4;
+    const vx0 = camX - W / 2 / ppm - 5, vx1 = camX + W / 2 / ppm + 5;
+    ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, band + 20);
+    ctx.fillStyle = "#d9523a"; ctx.fillRect(-20, top, W + 40, band);
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    for (let i = 0; i <= 4; i++) ctx.fillRect(-20, top + laneH * i - 1, W + 40, 2);
+    // distance marks
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = Math.max(11, Math.min(18, laneH * .6)) + "px 'Lilita One', Impact, sans-serif";
+    for (let x = 10; x < 100; x += 10) {
+      const px = sx(x); if (px < -30 || px > W + 30) continue;
+      ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(px - 1, top, 2, band);
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(x + "m", px, gy + band * .03 + 1);
+    }
+    // start line + blocks
+    const s0 = sx(0);
+    if (s0 > -40 && s0 < W + 40) { ctx.fillStyle = "#fff"; ctx.fillRect(s0 - 3, top, 6, band); }
+    // finish line + gantry
+    const f = sx(100);
+    if (f > -80 && f < W + 80) {
+      const sq = Math.max(4, laneH / 3);
+      for (let y = top, r = 0; y < H; y += sq, r++) for (let c = 0; c < 2; c++) { ctx.fillStyle = (r + c) % 2 ? "#1b2340" : "#fff"; ctx.fillRect(f - sq + c * sq, y, sq, sq); }
+      const gh = 3.2 * ppm;
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(f - 3, gy - gh, 6, gh + band * .06);
+      ctx.fillStyle = "#ff4f5e"; ctx.fillRect(f - 2.2 * ppm, gy - gh - .8 * ppm, 4.4 * ppm, .8 * ppm);
+      ctx.fillStyle = "#fff"; ctx.font = Math.max(12, ppm * .55) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillText("FINISH", f, gy - gh - .4 * ppm);
+    }
+    // runners, far lane first
+    const lanes = S.rivals.map((r, i) => ({ r, i })).concat([{ r: S, i: 3 }]);
+    lanes.forEach(({ r, i }) => {
+      const base = top + laneH * (i + .85);
+      const p = r.started ? 0 : (state === "smarks" || state === "sready" ? 1 : 2);
+      drawRunner(sx(r.x), base, ppm, r.x * 2.2, r.v > .5, r === S ? "#2a64e0" : r.kit, p);
+    });
+    // dust (player lane)
+    const pbase = top + laneH * 3.85;
+    parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .7; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), pbase - p.y * ppm, p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    // cue ring + messages
+    if (S.cueAt !== null || state === "sgun") {
+      const since = state === "sgun" ? S.t : S.t - S.cueAt, left = Math.max(0, 1 - since / SP.WINDOW);
+      const cx = W / 2, cy = H * .36, r = Math.min(W, H) * .11;
+      ctx.lineWidth = 8; ctx.strokeStyle = "rgba(27,35,64,.5)"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
+      ctx.strokeStyle = "#ffcd2e"; ctx.beginPath(); ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.font = Math.round(r * .75) + "px 'Lilita One', Impact, sans-serif";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.strokeText("TAP!", cx, cy + 2); ctx.fillText("TAP!", cx, cy + 2);
+    }
+    if (S.msgT > 0) {
+      ctx.globalAlpha = Math.min(1, S.msgT * 2);
+      ctx.font = Math.round(Math.min(W, H) * .075) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillStyle = S.msg.startsWith("MISS") || S.msg.startsWith("STUM") ? "#ff4f5e" : "#ffcd2e";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340";
+      const y = H * .2 - (1.3 - S.msgT) * 20;
+      ctx.strokeText(S.msg, W / 2, y); ctx.fillText(S.msg, W / 2, y);
+      ctx.globalAlpha = 1;
+    }
+    if (S.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (S.flash * 3).toFixed(2) + ")"; ctx.fillRect(-20, -20, W + 40, H + 40); }
   }
 
   // ---------- draw
@@ -659,7 +930,7 @@ li.fresh .r { color: #fff; }
       for (let x = o - sp; x < W + sp; x += sp) {
         const idx = Math.floor((x - off) / sp) + r * 7;
         ctx.fillStyle = CROWD[((idx * 2654435761) >>> 0) % CROWD.length];
-        const bob = state === "landed" ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
+        const bob = state === "landed" || state === "sdone" ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
         ctx.beginPath(); ctx.arc(x, st + 8 + r * rh - bob, 3.2, 0, 7); ctx.fill();
       }
     }
@@ -671,6 +942,7 @@ li.fresh .r { color: #fff; }
       ctx.fillRect(x, gy - 18, bw - 4, 18);
     }
 
+    if (mode === "sprint") { drawSprint(sx, gy); return; }
     // ground: grass then runway lane
     ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, gh);
     ctx.fillStyle = "#3aa045";
