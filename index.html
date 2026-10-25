@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#4fb3f0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Javelin">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -44,6 +51,15 @@ canvas { display: block; width: 100%; height: 100%; }
 .pip b { display: block; font-size: 10px; letter-spacing: .14em; color: #9fb0e0; font-weight: 900; }
 .pip span { font-family: var(--display); font-size: 20px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .pip.foul span { color: var(--hot); }
+.topr { display: flex; gap: 8px; align-items: flex-start; }
+.ico { pointer-events: auto; width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(27,35,64,.78); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ico svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ico .spk { fill: #fff; }
+.ico .off { display: none; }
+.ico.muted .on { display: none; }
+.ico.muted .off { display: inline; stroke: var(--hot); }
+.ico:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.tip { margin: 10px 0 0; padding: 8px 10px; border-radius: 12px; background: #26305a; color: #fff; font-weight: 800; font-size: 13px; line-height: 1.35; }
 .best { padding: 5px 14px 4px; border-radius: 14px; background: var(--sun); color: var(--ink); text-align: right; box-shadow: 0 4px 0 #c99700; }
 .best b { display: block; font-size: 10px; letter-spacing: .14em; font-weight: 900; }
 .best span { font-family: var(--display); font-size: 24px; line-height: 1.05; font-variant-numeric: tabular-nums; }
@@ -125,7 +141,11 @@ li.fresh .r { color: #fff; }
         <div class="pip" id="p1"><b>THROW 2</b><span>—</span></div>
         <div class="pip" id="p2"><b>THROW 3</b><span>—</span></div>
       </div>
-      <div class="best"><b>BEST</b><span id="hudBest">—</span></div>
+      <div class="topr">
+        <button class="ico" id="fsBtn" type="button" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button class="ico" id="muteBtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+        <div class="best"><b>BEST</b><span id="hudBest">—</span></div>
+      </div>
     </div>
     <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div></div>
     <div class="bottom">
@@ -149,6 +169,7 @@ li.fresh .r { color: #fff; }
         </div>
         <div class="series" id="rSeries"></div>
       </div>
+      <p class="tip" id="iosTip" hidden>For full screen on iPhone: tap Share, then Add to Home Screen, and play from the new icon.</p>
       <label class="name" for="pname">PLAYER <input id="pname" maxlength="14" value="Player" autocomplete="off"></label>
       <button class="play" id="play" type="button">PLAY</button>
     </div>
@@ -202,7 +223,7 @@ li.fresh .r { color: #fff; }
   let state = "menu";   // menu | ready | running | charging | flight | landed
   let throws = [], ax = RUN_START, aSpeed = 0, angle = 0, jav = null;
   let camX = 0, ppm = 40, shake = 0, time = 0, dustT = 0, freshIdx = -1;
-  let parts = [], trail = [];
+  let parts = [], trail = [], stepIdx = 0;
 
   // ---------- HUD
   function setPrompt(t, pulse) { $("prompt").textContent = t; $("prompt").classList.toggle("pulse", !!pulse); }
@@ -242,11 +263,13 @@ li.fresh .r { color: #fff; }
     jav = { V, x0: ax + 0.2, th, T, t: 0, x: ax + 0.2, y: H0, rot: th, landX: ax + 0.2 + range, foul: false, landed: false };
     jav.dist = Math.max(0, Math.round(jav.landX * 100) / 100);
     state = "flight"; setPrompt(""); setGo("");
+    sfx.grunt();
   }
   function foul() {
     $("go").classList.remove("held");
     aSpeed = 0; shake = 0.25;
     jav = { foul: true, landed: true };
+    sfx.groan();
     finish(null);
   }
   function finish(d) {
@@ -263,6 +286,7 @@ li.fresh .r { color: #fff; }
       const q = d / MAX;
       const word = rec ? "NEW RECORD!" : q > .97 ? "MONSTER!" : q > .9 ? "GREAT THROW!" : q > .75 ? "NICE!" : q > .5 ? "NOT BAD" : "KEEP TRYING";
       showToast(word, d.toFixed(2) + " m", next);
+      setTimeout(() => sfx.cheer(q, rec), 220);
     }
     setPrompt(""); setGo("");
   }
@@ -397,11 +421,137 @@ li.fresh .r { color: #fff; }
   setupAdmin();
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
-  $("play").addEventListener("click", startGame);
+  $("play").addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); startGame(); });
+
+  // ---------- full screen + sound buttons
+  const fsEl = document.documentElement;
+  const fsSupported = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen) && (document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function goFullscreen() {
+    if (!fsSupported || isFs()) return;
+    const req = fsEl.requestFullscreen ? fsEl.requestFullscreen({ navigationUI: "hide" }) : fsEl.webkitRequestFullscreen();
+    Promise.resolve(req).then(() => { try { screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }).catch(() => {});
+  }
+  $("fsBtn").hidden = !fsSupported;
+  $("fsBtn").addEventListener("click", () => {
+    if (isFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else goFullscreen();
+  });
+  const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone;
+  $("iosTip").hidden = !(/iPhone|iPod/.test(navigator.userAgent) && !standalone && !fsSupported);
+  function paintMute() { $("muteBtn").classList.toggle("muted", sfx.muted); $("muteBtn").setAttribute("aria-label", sfx.muted ? "Sound off" : "Sound on"); }
+  $("muteBtn").addEventListener("click", () => { sfx.toggle(); paintMute(); });
+  ["fsBtn", "muteBtn"].forEach(id => $(id).addEventListener("pointerdown", e => e.stopPropagation()));
   $("portraitOk").addEventListener("click", () => document.body.classList.add("portrait-ok"));
+
+
+  // ---------- sound (all synthesised with Web Audio; starts on the first tap)
+  const sfx = (() => {
+    let ac = null, master = null, noiseBuf = null;
+    let muted = false;
+    try { muted = localStorage.getItem(KEY + "-muted") === "1"; } catch (_) {}
+    function init() {
+      if (ac) { if (ac.state === "suspended") ac.resume(); return true; }
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ac = new AC(); master = ac.createGain(); master.gain.value = muted ? 0 : 0.9; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return true;
+    }
+    const ok = () => ac && !muted;
+    function noise(t, dur, type, freq, q, peak, attack, out) {
+      const src = ac.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+      const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(out || master);
+      src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.05);
+      return { f, g };
+    }
+    function tone(t, dur, type, f0, f1, peak, out) {
+      const o = ac.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + Math.min(0.03, dur / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(out || master); o.start(t); o.stop(t + dur + 0.05);
+      return o;
+    }
+    function formant(out, freqs) {
+      const sum = ac.createGain(); sum.connect(out || master);
+      const inp = ac.createGain();
+      freqs.forEach(([fq, q, lvl]) => { const b = ac.createBiquadFilter(); b.type = "bandpass"; b.frequency.value = fq; b.Q.value = q; const g = ac.createGain(); g.gain.value = lvl; inp.connect(b); b.connect(g); g.connect(sum); });
+      return inp;
+    }
+    return {
+      unlock: init,
+      get muted() { return muted; },
+      toggle() {
+        muted = !muted;
+        try { localStorage.setItem(KEY + "-muted", muted ? "1" : "0"); } catch (_) {}
+        if (init()) master.gain.setTargetAtTime(muted ? 0 : 0.9, ac.currentTime, 0.02);
+        return muted;
+      },
+      step(speed) {
+        if (!ok()) return; const t = ac.currentTime, v = 0.12 + Math.min(1, speed / 10) * 0.25;
+        noise(t, 0.07, "lowpass", 700, 1, v, 0.004);
+        tone(t, 0.06, "sine", 140, 60, v * 0.8);
+      },
+      grunt() {
+        if (!ok()) return; const t = ac.currentTime;
+        const voice = formant(null, [[650, 4, 1.4], [1100, 5, 0.8], [2500, 6, 0.3]]);
+        const o = tone(t, 0.32, "sawtooth", 150, 95, 0.55, voice);
+        o.detune.setValueAtTime(0, t); o.detune.linearRampToValueAtTime(-80, t + 0.32);
+        noise(t, 0.22, "bandpass", 1800, 0.8, 0.12, 0.01);
+      },
+      thud() {
+        if (!ok()) return; const t = ac.currentTime;
+        tone(t, 0.3, "sine", 110, 38, 0.9);
+        noise(t, 0.18, "lowpass", 500, 0.7, 0.5, 0.003);
+        noise(t + 0.02, 0.4, "bandpass", 2500, 0.6, 0.05, 0.02);
+      },
+      cheer(q, record) {
+        if (!ok()) return; const t = ac.currentTime;
+        const lvl = record ? 1.2 : q > .9 ? 1 : q > .75 ? 0.7 : q > .5 ? 0.45 : 0.25;
+        const dur = 1.2 + lvl * 2.3;
+        if (lvl >= 0.45) {
+          // crowd roar
+          const a = noise(t, dur, "bandpass", 900, 0.7, 0.32 * lvl, 0.25);
+          const b = noise(t, dur * 0.9, "bandpass", 2300, 1.2, 0.16 * lvl, 0.35);
+          const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 5.5; lg.gain.value = 0.05 * lvl;
+          lfo.connect(lg); lg.connect(b.g.gain); lfo.start(t); lfo.stop(t + dur);
+          a.f.frequency.setValueAtTime(700, t); a.f.frequency.linearRampToValueAtTime(1100, t + 0.6);
+          // whoops
+          const whoops = Math.round(lvl * 9);
+          for (let i = 0; i < whoops; i++) {
+            const st = t + 0.15 + Math.random() * dur * 0.6, f = 450 + Math.random() * 350;
+            const o = tone(st, 0.35 + Math.random() * 0.4, "triangle", f, f * (1.4 + Math.random() * 0.5), 0.05 * lvl);
+            const vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.value = 7; vg.gain.value = 15;
+            vib.connect(vg); vg.connect(o.frequency); vib.start(st); vib.stop(st + 0.8);
+          }
+        }
+        // applause
+        const claps = Math.round(18 + lvl * 60);
+        for (let i = 0; i < claps; i++) {
+          const st = t + Math.pow(Math.random(), 1.4) * dur;
+          noise(st, 0.03 + Math.random() * 0.02, "bandpass", 1500 + Math.random() * 1500, 1.5, 0.12 + Math.random() * 0.12, 0.002);
+        }
+      },
+      groan() {
+        if (!ok()) return; const t = ac.currentTime, dur = 1.6;
+        const voice = formant(null, [[720, 5, 1.3], [1150, 6, 0.8], [2600, 6, 0.2]]);
+        for (let i = 0; i < 7; i++) {
+          const f = 150 + Math.random() * 110, st = t + Math.random() * 0.15;
+          tone(st, dur, "sawtooth", f, f * 0.68, 0.09, voice);
+        }
+        noise(t, dur, "bandpass", 600, 0.8, 0.12, 0.2);
+      }
+    };
+  })();
+
+  paintMute();
 
   // ---------- input
   function press() {
+    sfx.unlock();
     if (state === "ready") startRun();
     else if (state === "running") startCharge();
     else if (state === "landed") { if (throws.length >= 3) showMenu(true); else newThrow(); }
@@ -425,6 +575,7 @@ li.fresh .r { color: #fff; }
     time += dt;
     if (state === "running" || state === "charging") {
       aSpeed += ACC * dt; ax += aSpeed * dt;
+      const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
       if (state === "charging") angle = Math.min(90, angle + RATE * dt);
       dustT -= dt; if (dustT < 0) { dustT = .14; puff(ax - .2, .05, 2, 1.5, "#e98a6c"); }
       if (ax > 0.05) foul();
@@ -440,7 +591,7 @@ li.fresh .r { color: #fff; }
       trail.push([j.x, j.y]); if (trail.length > 28) trail.shift();
       if (t >= j.T) {
         j.landed = true; j.x = j.landX; j.y = 0; j.rot = Math.min(j.rot, -.4);
-        shake = .35; puff(j.x, 0, 16, 5, "#c9a26a");
+        shake = .35; puff(j.x, 0, 16, 5, "#c9a26a"); sfx.thud();
         finish(j.dist);
       }
     } else if (trail.length) trail.shift();

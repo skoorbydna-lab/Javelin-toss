@@ -1,0 +1,756 @@
+<title>Javelin Toss</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Layout: full-screen landscape game. Canvas fills the screen; HUD and menus float on top. Single bright stadium look. */
+:root {
+  --sky: #4fb3f0;
+  --ink: #1b2340;
+  --cream: #fff8e6;
+  --sun: #ffcd2e;
+  --hot: #ff4f5e;
+  --teal: #2ec4b6;
+  --panel: #1b2340;
+  --display: "Lilita One", "Arial Rounded MT Bold", Impact, sans-serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; background: var(--sky); color: var(--cream); overflow: hidden; }
+body { font-family: var(--body); overscroll-behavior: none; }
+* { -webkit-tap-highlight-color: transparent; }
+
+#stage { position: fixed; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+canvas { display: block; width: 100%; height: 100%; }
+
+.hud { position: absolute; inset: 0; pointer-events: none;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(12px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; justify-content: space-between; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pips { display: flex; gap: 8px; }
+.pip { min-width: 64px; padding: 5px 10px 4px; border-radius: 14px; background: rgba(27,35,64,.78); text-align: center; border: 3px solid transparent; }
+.pip.now { border-color: var(--sun); }
+.pip b { display: block; font-size: 10px; letter-spacing: .14em; color: #9fb0e0; font-weight: 900; }
+.pip span { font-family: var(--display); font-size: 20px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pip.foul span { color: var(--hot); }
+.topr { display: flex; gap: 8px; align-items: flex-start; }
+.ico { pointer-events: auto; width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(27,35,64,.78); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ico svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ico .spk { fill: #fff; }
+.ico .off { display: none; }
+.ico.muted .on { display: none; }
+.ico.muted .off { display: inline; stroke: var(--hot); }
+.ico:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.tip { margin: 10px 0 0; padding: 8px 10px; border-radius: 12px; background: #26305a; color: #fff; font-weight: 800; font-size: 13px; line-height: 1.35; }
+.best { padding: 5px 14px 4px; border-radius: 14px; background: var(--sun); color: var(--ink); text-align: right; box-shadow: 0 4px 0 #c99700; }
+.best b { display: block; font-size: 10px; letter-spacing: .14em; font-weight: 900; }
+.best span { font-family: var(--display); font-size: 24px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+
+.bottom { display: flex; align-items: flex-end; justify-content: center; position: relative; }
+.prompt { font-family: var(--display); font-size: clamp(22px, 5vh, 34px); color: #fff; text-shadow: 0 3px 0 var(--ink), 0 0 12px rgba(0,0,0,.25); letter-spacing: .03em; margin-bottom: 6px; }
+.prompt.pulse { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+.btn-go { position: absolute; right: 0; bottom: 0; width: clamp(84px, 22vh, 120px); aspect-ratio: 1; max-width: 100%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a93, var(--hot) 60%); box-shadow: 0 6px 0 #b8293a, 0 10px 20px rgba(0,0,0,.25);
+  display: grid; place-items: center; font-family: var(--display); font-size: clamp(18px, 4.6vh, 26px); color: #fff; text-shadow: 0 2px 0 #b8293a; transition: transform .05s, box-shadow .05s; }
+.btn-go.held { transform: translateY(5px) scale(.96); box-shadow: 0 1px 0 #b8293a, 0 4px 10px rgba(0,0,0,.25); }
+
+.toast { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+.toast .word { font-family: var(--display); font-size: clamp(30px, 9vh, 64px); color: var(--sun); text-shadow: 0 4px 0 var(--ink); transform: rotate(-4deg); }
+.toast .word.foul { color: var(--hot); }
+.toast .dist { font-family: var(--display); font-size: clamp(44px, 15vh, 104px); color: #fff; text-shadow: 0 5px 0 var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.toast .next { margin-top: 8px; font-weight: 900; letter-spacing: .1em; font-size: 14px; color: #fff; text-shadow: 0 2px 0 var(--ink); }
+.toast.pop { animation: pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
+
+.menu { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(27,35,64,.55); z-index: 5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
+.card { background: var(--panel); border-radius: 24px; padding: 18px 22px 20px; width: min(640px, 100%); box-shadow: 0 10px 0 #0e1428, 0 20px 40px rgba(0,0,0,.35);
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 520px) { .card { grid-template-columns: 1fr; } }
+.logo { font-family: var(--display); font-size: clamp(40px, 11vh, 64px); line-height: .9; margin: 0; color: #fff; text-shadow: 0 5px 0 var(--hot); transform: rotate(-3deg); transform-origin: left; }
+.logo em { font-style: normal; color: var(--sun); }
+.sub { margin: 12px 0 0; color: #b9c4ea; font-weight: 700; font-size: 14px; line-height: 1.4; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 4px; }
+.stat { background: #26305a; border-radius: 14px; padding: 8px 12px; }
+.stat b { font-size: 10px; letter-spacing: .14em; color: #9fb0e0; }
+.stat div { font-family: var(--display); font-size: 30px; color: var(--sun); font-variant-numeric: tabular-nums; }
+.series { margin-top: 8px; color: #b9c4ea; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
+.name { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 800; font-size: 13px; color: #b9c4ea; letter-spacing: .06em; }
+.name input { font: 800 16px var(--body); color: var(--ink); background: var(--cream); border: 0; border-radius: 10px; padding: 7px 10px; width: 12ch; }
+.play { margin-top: 16px; width: 100%; font-family: var(--display); font-size: 30px; letter-spacing: .04em; color: var(--ink); background: var(--sun); border: 0; border-radius: 16px; padding: 10px; cursor: pointer; box-shadow: 0 6px 0 #c99700; }
+.play:active { transform: translateY(4px); box-shadow: 0 2px 0 #c99700; }
+.play:focus-visible, .name input:focus-visible, .ghost:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tab { flex: 1; font-family: var(--display); font-size: 16px; color: #9fb0e0; background: #222b52; border: 0; border-radius: 12px; padding: 7px 6px; cursor: pointer; }
+.tab.on { background: var(--teal); color: var(--ink); box-shadow: 0 3px 0 #1d8f85; }
+.src { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #9fb0e0; }
+.src.live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-right: 6px; vertical-align: 1px; }
+.tab:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.recs h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0 0 6px; color: #fff; }
+ol { list-style: none; margin: 0; padding: 0; }
+li { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+li:nth-child(odd) { background: #222b52; }
+li .r { font-family: var(--display); color: #9fb0e0; }
+li:first-child .r { color: var(--sun); }
+li .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+li .d { font-family: var(--display); font-size: 19px; color: #fff; }
+li.fresh { background: var(--hot) !important; }
+li.fresh .r { color: #fff; }
+.empty { color: #9fb0e0; font-weight: 700; font-size: 14px; margin: 0; }
+.ghost { margin-top: 10px; font: 800 12px var(--body); color: #9fb0e0; background: none; border: 2px solid #2f3a68; border-radius: 10px; padding: 4px 10px; cursor: pointer; }
+.admin { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.admin .ghost { margin-top: 0; }
+#adminPanel { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.adminMsg { width: 100%; margin: 0; font-size: 12px; font-weight: 700; color: #9fb0e0; }
+.ghost.arm { color: var(--hot); border-color: var(--hot); }
+
+#rotate { position: fixed; inset: 0; z-index: 9; background: var(--panel); display: none; place-items: center; text-align: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+#rotate .ph { width: 70px; height: 116px; border: 6px solid var(--sun); border-radius: 14px; margin: 0 auto 22px; animation: turn 2s ease-in-out infinite; }
+@keyframes turn { 40%, 70% { transform: rotate(-90deg); } }
+#rotate p { font-family: var(--display); font-size: 28px; margin: 0 0 6px; }
+@media (orientation: portrait) and (max-width: 760px) { body:not(.portrait-ok) #rotate { display: grid; } }
+@media (prefers-reduced-motion: reduce) { .prompt.pulse, .toast.pop, #rotate .ph { animation: none; } }
+</style>
+
+<div id="stage">
+  <canvas id="cv" aria-label="Javelin stadium"></canvas>
+  <div class="hud">
+    <div class="top">
+      <div class="pips">
+        <div class="pip" id="p0"><b>THROW 1</b><span>—</span></div>
+        <div class="pip" id="p1"><b>THROW 2</b><span>—</span></div>
+        <div class="pip" id="p2"><b>THROW 3</b><span>—</span></div>
+      </div>
+      <div class="topr">
+        <button class="ico" id="fsBtn" type="button" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        <button class="ico" id="muteBtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+        <div class="best"><b>BEST</b><span id="hudBest">—</span></div>
+      </div>
+    </div>
+    <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div></div>
+    <div class="bottom">
+      <div class="prompt" id="prompt"></div>
+      <div class="btn-go" id="go">RUN</div>
+    </div>
+  </div>
+</div>
+
+<div class="menu" id="menu">
+  <div class="card">
+    <div>
+      <h1 class="logo" id="mTitle">Javelin<br><em>Toss</em></h1>
+      <div id="mIntro">
+        <p class="sub">Tap to start running. Your athlete speeds up all the way down the runway, and faster means further. Hold to raise the javelin, let go to launch. Throw late, at the perfect angle, but step over the line and it's a foul!</p>
+      </div>
+      <div id="mResults" hidden>
+        <div class="stats">
+          <div class="stat"><b>BEST</b><div id="rBest">—</div></div>
+          <div class="stat"><b>AVERAGE</b><div id="rAvg">—</div></div>
+        </div>
+        <div class="series" id="rSeries"></div>
+      </div>
+      <p class="tip" id="iosTip" hidden>For full screen on iPhone: tap Share, then Add to Home Screen, and play from the new icon.</p>
+      <label class="name" for="pname">PLAYER <input id="pname" maxlength="14" value="Player" autocomplete="off"></label>
+      <button class="play" id="play" type="button">PLAY</button>
+    </div>
+    <div class="recs">
+      <div class="tabs" role="tablist">
+        <button class="tab on" id="tabThrow" type="button" role="tab" aria-selected="true">Longest throw</button>
+        <button class="tab" id="tabAvg" type="button" role="tab" aria-selected="false">Best average</button>
+      </div>
+      <p class="src" id="src">Scores on this device</p>
+      <ol id="list"></ol>
+      <ol id="listAvg" hidden></ol>
+      <p class="empty" id="empty">No records yet. Be the first!</p>
+      <div class="admin">
+        <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
+        <span id="adminPanel" hidden>
+          <button class="ghost" id="resetThrow" type="button">Reset longest throw</button>
+          <button class="ghost" id="resetAvg" type="button">Reset averages</button>
+        </span>
+        <p class="adminMsg" id="adminMsg" hidden></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="rotate">
+  <div><div class="ph"></div><p>Turn your phone sideways</p>
+  <button class="ghost" id="portraitOk" type="button">Play upright anyway</button></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function () {
+  const RUN_START = -25, ACC = 2, VBASE = 12, VGAIN = 1.6, RATE = 60, G = 9.81, H0 = 1.9, FLIGHT_SPEED = 1.5;
+  const MAX = Math.pow(VBASE + VGAIN * Math.sqrt(2 * ACC * -RUN_START), 2) / G;
+  const ADMIN_EMAIL = "skoorbydna@gmail.com";
+  const KEY = "javelin-toss-records-v1";
+  const $ = id => document.getElementById(id);
+  const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
+
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+
+  // ---------- state
+  let state = "menu";   // menu | ready | running | charging | flight | landed
+  let throws = [], ax = RUN_START, aSpeed = 0, angle = 0, jav = null;
+  let camX = 0, ppm = 40, shake = 0, time = 0, dustT = 0, freshIdx = -1;
+  let parts = [], trail = [], stepIdx = 0;
+
+  // ---------- HUD
+  function setPrompt(t, pulse) { $("prompt").textContent = t; $("prompt").classList.toggle("pulse", !!pulse); }
+  function setGo(t) { $("go").textContent = t; $("go").hidden = !t; }
+  function showToast(word, dist, next, foul) {
+    const el = $("toast"); el.hidden = false;
+    $("tWord").textContent = word; $("tWord").classList.toggle("foul", !!foul);
+    $("tDist").textContent = dist; $("tNext").textContent = next;
+    el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+  }
+  function best() { const v = throws.filter(t => t !== null); return v.length ? Math.max(...v) : null; }
+  function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
+  function renderHud() {
+    for (let i = 0; i < 3; i++) {
+      const p = $("p" + i), t = throws[i];
+      p.querySelector("span").textContent = t === undefined ? "—" : t === null ? "FOUL" : t.toFixed(2);
+      p.classList.toggle("foul", t === null);
+      p.classList.toggle("now", i === throws.length && state !== "menu");
+    }
+    const b = best(); $("hudBest").textContent = b === null ? "—" : b.toFixed(2);
+  }
+
+  // ---------- flow
+  function newThrow() {
+    ax = RUN_START; aSpeed = 0; angle = 0; jav = null; trail = []; parts = [];
+    state = "ready"; $("toast").hidden = true;
+    setPrompt("TAP TO RUN", true); setGo("RUN"); renderHud();
+  }
+  function startGame() { throws = []; freshIdx = -1; freshAvg = -1; freshIds[KEY] = freshIds[KEY_AVG] = null; $("menu").hidden = true; newThrow(); }
+  function startRun() { state = "running"; aSpeed = 0; setPrompt("HOLD TO AIM"); setGo("HOLD"); }
+  function startCharge() { state = "charging"; angle = 0; $("go").classList.add("held"); setPrompt("LET GO TO THROW!"); }
+  function release() {
+    $("go").classList.remove("held");
+    const V = VBASE + VGAIN * aSpeed;
+    const th = angle * Math.PI / 180, range = V * V / G * Math.sin(2 * th);
+    const T = Math.max(0.35, 2 * V * Math.sin(th) / G);
+    jav = { V, x0: ax + 0.2, th, T, t: 0, x: ax + 0.2, y: H0, rot: th, landX: ax + 0.2 + range, foul: false, landed: false };
+    jav.dist = Math.max(0, Math.round(jav.landX * 100) / 100);
+    state = "flight"; setPrompt(""); setGo("");
+    sfx.grunt();
+  }
+  function foul() {
+    $("go").classList.remove("held");
+    aSpeed = 0; shake = 0.25;
+    jav = { foul: true, landed: true };
+    sfx.groan();
+    finish(null);
+  }
+  function finish(d) {
+    throws.push(d);
+    state = "landed";
+    let rec = false;
+    if (d !== null) rec = saveRecord(d) === 0;
+    renderHud();
+    const last = throws.length >= 3;
+    if (last) { freshAvg = addRecord(KEY_AVG, avg()); tab = freshAvg >= 0 && freshIdx < 0 ? "avg" : "throw"; }
+    const next = last ? "TAP FOR RESULTS" : "TAP FOR NEXT THROW";
+    if (d === null) showToast("FOUL!", "Over the line", next, true);
+    else {
+      const q = d / MAX;
+      const word = rec ? "NEW RECORD!" : q > .97 ? "MONSTER!" : q > .9 ? "GREAT THROW!" : q > .75 ? "NICE!" : q > .5 ? "NOT BAD" : "KEEP TRYING";
+      showToast(word, d.toFixed(2) + " m", next);
+      setTimeout(() => sfx.cheer(q, rec), 220);
+    }
+    setPrompt(""); setGo("");
+  }
+  function showMenu(results) {
+    state = "menu"; $("toast").hidden = true;
+    $("mIntro").hidden = results; $("mResults").hidden = !results;
+    $("mTitle").innerHTML = results ? "Final<br><em>Results</em>" : "Javelin<br><em>Toss</em>";
+    $("play").textContent = results ? "PLAY AGAIN" : "PLAY";
+    if (results) {
+      const b = best(), a = avg();
+      $("rBest").textContent = b === null ? "—" : b.toFixed(2) + " m";
+      $("rAvg").textContent = a === null ? "—" : a.toFixed(2) + " m";
+      $("rSeries").textContent = throws.map(t => t === null ? "Foul" : t.toFixed(2)).join("  ·  ") + "   (fouls count as 0)";
+    }
+    renderRecords(); $("menu").hidden = false;
+    setPrompt(""); setGo(""); renderHud();
+  }
+
+  // ---------- records: shared online board (Firebase) with this-device fallback
+  const KEY_AVG = KEY + "-avg";
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
+    authDomain: "javelin-toss-fe81d.firebaseapp.com",
+    projectId: "javelin-toss-fe81d",
+    storageBucket: "javelin-toss-fe81d.firebasestorage.app",
+    messagingSenderId: "310679295817",
+    appId: "1:310679295817:web:65a93e4940e62a5ae5ac98"
+  };
+  const COLL = { [KEY]: "throws", [KEY_AVG]: "averages" };
+  let freshAvg = -1, tab = "throw", fdb = null, online = false, netErr = "";
+  const remote = { [KEY]: [], [KEY_AVG]: [] }, freshIds = { [KEY]: null, [KEY_AVG]: null };
+
+  function playerName() { return ($("pname").value.trim() || "Player").slice(0, 14); }
+  function loadLocal(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } }
+  function addLocal(k, e) {
+    const recs = loadLocal(k); recs.push(e); recs.sort((a, b) => b.d - a.d);
+    const top = recs.slice(0, 5);
+    try { localStorage.setItem(k, JSON.stringify(top)); } catch (_) {}
+    return top.indexOf(e);
+  }
+  function addRecord(k, d) {
+    d = Math.round(d * 100) / 100;
+    const e = { n: playerName(), d, t: Date.now() };
+    const localRank = addLocal(k, e);
+    if (!online) return localRank;
+    const rank = remote[k].filter(r => r.d >= d).length;
+    const ref = fdb.collection(COLL[k]).doc();
+    freshIds[k] = ref.id;
+    ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => { netErr = "save: " + (err.code || err.message); renderRecords(); });
+    return rank < 5 ? rank : -1;
+  }
+  function saveRecord(d) { freshIdx = addRecord(KEY, d); return freshIdx; }
+  function fillList(el, recs, k) {
+    el.innerHTML = "";
+    const freshLocal = k === KEY ? freshIdx : freshAvg;
+    recs.forEach((r, i) => {
+      const li = document.createElement("li");
+      if (online ? (r.id && r.id === freshIds[k]) : i === freshLocal) li.className = "fresh";
+      li.innerHTML = '<span class="r">' + (i + 1) + '</span><span class="n"></span><span class="d">' + Number(r.d).toFixed(2) + '</span>';
+      li.querySelector(".n").textContent = r.n; el.appendChild(li);
+    });
+  }
+  function renderRecords() {
+    const a = online ? remote[KEY] : loadLocal(KEY), b = online ? remote[KEY_AVG] : loadLocal(KEY_AVG);
+    fillList($("list"), a, KEY); fillList($("listAvg"), b, KEY_AVG);
+    $("list").hidden = tab !== "throw"; $("listAvg").hidden = tab !== "avg";
+    $("tabThrow").classList.toggle("on", tab === "throw"); $("tabAvg").classList.toggle("on", tab === "avg");
+    $("tabThrow").setAttribute("aria-selected", tab === "throw"); $("tabAvg").setAttribute("aria-selected", tab === "avg");
+    const cur = tab === "throw" ? a : b;
+    $("empty").textContent = tab === "throw" ? "No records yet. Be the first!" : "Finish all three throws to post an average.";
+    $("empty").hidden = cur.length > 0;
+    $("src").textContent = online ? "Everyone's scores, live" + (netErr ? " (" + netErr + ")" : "") : "Scores on this device" + (netErr ? " (online board: " + netErr + ")" : "");
+    $("src").classList.toggle("live", online);
+  }
+  function connect() {
+    try {
+      if (!window.firebase) { netErr = "library didn't load"; return; }
+      firebase.initializeApp(FIREBASE_CONFIG);
+      fdb = firebase.firestore();
+      [KEY, KEY_AVG].forEach(k => {
+        fdb.collection(COLL[k]).orderBy("d", "desc").limit(5).onSnapshot(snap => {
+          remote[k] = snap.docs.map(doc => ({ id: doc.id, n: String(doc.get("n") || "Player"), d: Number(doc.get("d")) || 0 }));
+          online = true; renderRecords();
+        }, err => { online = false; netErr = err.code || err.message || "error"; renderRecords(); });
+      });
+    } catch (e) { online = false; netErr = e.code || e.message || "error"; }
+  }
+  connect();
+  $("tabThrow").addEventListener("click", () => { tab = "throw"; renderRecords(); });
+  $("tabAvg").addEventListener("click", () => { tab = "avg"; renderRecords(); });
+
+  // ---------- owner-only reset (Google sign-in; the database rules only let the owner delete)
+  function adminMsg(t) { $("adminMsg").textContent = t; $("adminMsg").hidden = !t; }
+  let isAdmin = false;
+  function setupAdmin() {
+    if (!window.firebase || !firebase.auth) { $("adminBtn").hidden = true; return; }
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(u => {
+      isAdmin = !!(u && u.email && u.email.toLowerCase() === ADMIN_EMAIL);
+      if (u && !isAdmin) { adminMsg("Only the game's owner can reset scores."); auth.signOut(); }
+      $("adminPanel").hidden = !isAdmin;
+      $("adminBtn").textContent = isAdmin ? "Sign out" : "Owner sign-in";
+      if (isAdmin) adminMsg("Signed in as owner.");
+    });
+    $("adminBtn").addEventListener("click", () => {
+      if (isAdmin) { auth.signOut(); adminMsg(""); return; }
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => adminMsg("Sign-in failed: " + (err.code || err.message)));
+    });
+    [["resetThrow", KEY, "longest throw"], ["resetAvg", KEY_AVG, "average"]].forEach(([id, k, label]) => {
+      let armT;
+      const b = $(id), orig = b.textContent;
+      b.addEventListener("click", async () => {
+        if (!b.classList.contains("arm")) {
+          b.classList.add("arm"); b.textContent = "Tap again to confirm";
+          armT = setTimeout(() => { b.classList.remove("arm"); b.textContent = orig; }, 3000); return;
+        }
+        clearTimeout(armT); b.classList.remove("arm"); b.textContent = orig;
+        try {
+          adminMsg("Resetting " + label + " board…");
+          for (;;) {
+            const snap = await fdb.collection(COLL[k]).limit(300).get();
+            if (snap.empty) break;
+            const batch = fdb.batch(); snap.docs.forEach(d => batch.delete(d.ref)); await batch.commit();
+          }
+          try { localStorage.removeItem(k); } catch (_) {}
+          adminMsg("The " + label + " board is cleared.");
+          renderRecords();
+        } catch (err) { adminMsg("Reset failed: " + (err.code || err.message)); }
+      });
+    });
+  }
+  setupAdmin();
+  try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
+  $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
+  $("play").addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); startGame(); });
+
+  // ---------- full screen + sound buttons
+  const fsEl = document.documentElement;
+  const fsSupported = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen) && (document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function goFullscreen() {
+    if (!fsSupported || isFs()) return;
+    const req = fsEl.requestFullscreen ? fsEl.requestFullscreen({ navigationUI: "hide" }) : fsEl.webkitRequestFullscreen();
+    Promise.resolve(req).then(() => { try { screen.orientation.lock("landscape").catch(() => {}); } catch (_) {} }).catch(() => {});
+  }
+  $("fsBtn").hidden = !fsSupported;
+  $("fsBtn").addEventListener("click", () => {
+    if (isFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else goFullscreen();
+  });
+  const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone;
+  $("iosTip").hidden = !(/iPhone|iPod/.test(navigator.userAgent) && !standalone && !fsSupported);
+  function paintMute() { $("muteBtn").classList.toggle("muted", sfx.muted); $("muteBtn").setAttribute("aria-label", sfx.muted ? "Sound off" : "Sound on"); }
+  $("muteBtn").addEventListener("click", () => { sfx.toggle(); paintMute(); });
+  ["fsBtn", "muteBtn"].forEach(id => $(id).addEventListener("pointerdown", e => e.stopPropagation()));
+  $("portraitOk").addEventListener("click", () => document.body.classList.add("portrait-ok"));
+
+
+  // ---------- sound (all synthesised with Web Audio; starts on the first tap)
+  const sfx = (() => {
+    let ac = null, master = null, noiseBuf = null;
+    let muted = false;
+    try { muted = localStorage.getItem(KEY + "-muted") === "1"; } catch (_) {}
+    function init() {
+      if (ac) { if (ac.state === "suspended") ac.resume(); return true; }
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ac = new AC(); master = ac.createGain(); master.gain.value = muted ? 0 : 0.9; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return true;
+    }
+    const ok = () => ac && !muted;
+    function noise(t, dur, type, freq, q, peak, attack, out) {
+      const src = ac.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+      const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(out || master);
+      src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.05);
+      return { f, g };
+    }
+    function tone(t, dur, type, f0, f1, peak, out) {
+      const o = ac.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = ac.createGain(); g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + Math.min(0.03, dur / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(out || master); o.start(t); o.stop(t + dur + 0.05);
+      return o;
+    }
+    function formant(out, freqs) {
+      const sum = ac.createGain(); sum.connect(out || master);
+      const inp = ac.createGain();
+      freqs.forEach(([fq, q, lvl]) => { const b = ac.createBiquadFilter(); b.type = "bandpass"; b.frequency.value = fq; b.Q.value = q; const g = ac.createGain(); g.gain.value = lvl; inp.connect(b); b.connect(g); g.connect(sum); });
+      return inp;
+    }
+    return {
+      unlock: init,
+      get muted() { return muted; },
+      toggle() {
+        muted = !muted;
+        try { localStorage.setItem(KEY + "-muted", muted ? "1" : "0"); } catch (_) {}
+        if (init()) master.gain.setTargetAtTime(muted ? 0 : 0.9, ac.currentTime, 0.02);
+        return muted;
+      },
+      step(speed) {
+        if (!ok()) return; const t = ac.currentTime, v = 0.12 + Math.min(1, speed / 10) * 0.25;
+        noise(t, 0.07, "lowpass", 700, 1, v, 0.004);
+        tone(t, 0.06, "sine", 140, 60, v * 0.8);
+      },
+      grunt() {
+        if (!ok()) return; const t = ac.currentTime;
+        const voice = formant(null, [[650, 4, 1.4], [1100, 5, 0.8], [2500, 6, 0.3]]);
+        const o = tone(t, 0.32, "sawtooth", 150, 95, 0.55, voice);
+        o.detune.setValueAtTime(0, t); o.detune.linearRampToValueAtTime(-80, t + 0.32);
+        noise(t, 0.22, "bandpass", 1800, 0.8, 0.12, 0.01);
+      },
+      thud() {
+        if (!ok()) return; const t = ac.currentTime;
+        tone(t, 0.3, "sine", 110, 38, 0.9);
+        noise(t, 0.18, "lowpass", 500, 0.7, 0.5, 0.003);
+        noise(t + 0.02, 0.4, "bandpass", 2500, 0.6, 0.05, 0.02);
+      },
+      cheer(q, record) {
+        if (!ok()) return; const t = ac.currentTime;
+        const lvl = record ? 1.2 : q > .9 ? 1 : q > .75 ? 0.7 : q > .5 ? 0.45 : 0.25;
+        const dur = 1.2 + lvl * 2.3;
+        if (lvl >= 0.45) {
+          // crowd roar
+          const a = noise(t, dur, "bandpass", 900, 0.7, 0.32 * lvl, 0.25);
+          const b = noise(t, dur * 0.9, "bandpass", 2300, 1.2, 0.16 * lvl, 0.35);
+          const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 5.5; lg.gain.value = 0.05 * lvl;
+          lfo.connect(lg); lg.connect(b.g.gain); lfo.start(t); lfo.stop(t + dur);
+          a.f.frequency.setValueAtTime(700, t); a.f.frequency.linearRampToValueAtTime(1100, t + 0.6);
+          // whoops
+          const whoops = Math.round(lvl * 9);
+          for (let i = 0; i < whoops; i++) {
+            const st = t + 0.15 + Math.random() * dur * 0.6, f = 450 + Math.random() * 350;
+            const o = tone(st, 0.35 + Math.random() * 0.4, "triangle", f, f * (1.4 + Math.random() * 0.5), 0.05 * lvl);
+            const vib = ac.createOscillator(), vg = ac.createGain(); vib.frequency.value = 7; vg.gain.value = 15;
+            vib.connect(vg); vg.connect(o.frequency); vib.start(st); vib.stop(st + 0.8);
+          }
+        }
+        // applause
+        const claps = Math.round(18 + lvl * 60);
+        for (let i = 0; i < claps; i++) {
+          const st = t + Math.pow(Math.random(), 1.4) * dur;
+          noise(st, 0.03 + Math.random() * 0.02, "bandpass", 1500 + Math.random() * 1500, 1.5, 0.12 + Math.random() * 0.12, 0.002);
+        }
+      },
+      groan() {
+        if (!ok()) return; const t = ac.currentTime, dur = 1.6;
+        const voice = formant(null, [[720, 5, 1.3], [1150, 6, 0.8], [2600, 6, 0.2]]);
+        for (let i = 0; i < 7; i++) {
+          const f = 150 + Math.random() * 110, st = t + Math.random() * 0.15;
+          tone(st, dur, "sawtooth", f, f * 0.68, 0.09, voice);
+        }
+        noise(t, dur, "bandpass", 600, 0.8, 0.12, 0.2);
+      }
+    };
+  })();
+
+  paintMute();
+
+  // ---------- input
+  function press() {
+    sfx.unlock();
+    if (state === "ready") startRun();
+    else if (state === "running") startCharge();
+    else if (state === "landed") { if (throws.length >= 3) showMenu(true); else newThrow(); }
+  }
+  function unpress() { if (state === "charging") release(); }
+  stage.addEventListener("pointerdown", e => { if (e.button > 0) return; e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {} press(); });
+  stage.addEventListener("pointerup", e => { e.preventDefault(); unpress(); });
+  stage.addEventListener("pointercancel", unpress);
+  stage.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+    if (e.code === "Space") { e.preventDefault(); if (!e.repeat) press(); }
+  });
+  document.addEventListener("keyup", e => { if (e.code === "Space") { e.preventDefault(); unpress(); } });
+
+  // ---------- update
+  function puff(x, y, n, spread, col) {
+    for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * spread, vy: Math.random() * spread * .6, life: 1, r: .12 + Math.random() * .2, col });
+  }
+  function update(dt) {
+    time += dt;
+    if (state === "running" || state === "charging") {
+      aSpeed += ACC * dt; ax += aSpeed * dt;
+      const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
+      if (state === "charging") angle = Math.min(90, angle + RATE * dt);
+      dustT -= dt; if (dustT < 0) { dustT = .14; puff(ax - .2, .05, 2, 1.5, "#e98a6c"); }
+      if (ax > 0.05) foul();
+    } else if (aSpeed > 0) { aSpeed = Math.max(0, aSpeed - 10 * dt); ax += aSpeed * dt; }
+
+    if (state === "flight") {
+      const j = jav;
+      j.t = Math.min(j.T, j.t + dt * FLIGHT_SPEED);
+      const t = j.t;
+      j.x = j.x0 + j.V * Math.cos(j.th) * t;
+      j.y = Math.max(0, H0 * (1 - t / j.T) + j.V * Math.sin(j.th) * t - G * t * t / 2);
+      j.rot = Math.atan2(j.V * Math.sin(j.th) - G * t - H0 / j.T, j.V * Math.cos(j.th));
+      trail.push([j.x, j.y]); if (trail.length > 28) trail.shift();
+      if (t >= j.T) {
+        j.landed = true; j.x = j.landX; j.y = 0; j.rot = Math.min(j.rot, -.4);
+        shake = .35; puff(j.x, 0, 16, 5, "#c9a26a"); sfx.thud();
+        finish(j.dist);
+      }
+    } else if (trail.length) trail.shift();
+
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= 4 * dt; p.life -= dt * 1.6; if (p.y < 0) p.y = 0; });
+    parts = parts.filter(p => p.life > 0);
+    shake = Math.max(0, shake - dt);
+
+    // camera
+    let tx, tp;
+    const flying = jav && !jav.foul;
+    if (!flying) { tp = Math.min(H / 8.5, W / 16); tx = ax + (W / tp) * 0.25; }
+    else { tp = Math.min(W / 46, H * .66 / 21); tx = jav.x + (jav.landed ? 0 : (W / tp) * .12); }
+    const snap = state === "ready" || state === "menu";
+    const k = snap ? 1 : 1 - Math.exp(-dt * 4);
+    ppm += (tp - ppm) * (snap ? 1 : k * .8);
+    camX += (tx - camX) * k;
+  }
+
+  // ---------- draw
+  const CROWD = ["#ff4f5e", "#ffcd2e", "#2ec4b6", "#ffffff", "#7c5cff", "#ff9f43"];
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const shx = shake ? (Math.random() - .5) * 14 * shake : 0, shy = shake ? (Math.random() - .5) * 10 * shake : 0;
+    ctx.translate(shx, shy);
+    const gy = H * .76, gh = H - gy + 20;
+    const sx = x => (x - camX) * ppm + W / 2, sy = y => gy - y * ppm;
+
+    // sky + sun
+    let g = ctx.createLinearGradient(0, 0, 0, gy);
+    g.addColorStop(0, "#3a9fe6"); g.addColorStop(1, "#c4ebff");
+    ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, gy + 20);
+    ctx.fillStyle = "rgba(255,240,170,.35)"; ctx.beginPath(); ctx.arc(W * .84, H * .14, H * .12, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff3b0"; ctx.beginPath(); ctx.arc(W * .84, H * .14, H * .07, 0, 7); ctx.fill();
+
+    // clouds
+    ctx.fillStyle = "rgba(255,255,255,.92)";
+    for (let i = 0; i < 6; i++) {
+      const span = W + 300, cx = (((i * 290 - camX * ppm * .06) % span) + span) % span - 150, cy = H * (.08 + (i % 3) * .07), s = H * (.035 + (i % 2) * .015);
+      ctx.beginPath(); ctx.arc(cx, cy, s, 0, 7); ctx.arc(cx + s * 1.1, cy - s * .4, s * 1.2, 0, 7); ctx.arc(cx + s * 2.3, cy, s, 0, 7); ctx.fill();
+    }
+
+    // speed lines
+    if (aSpeed > 4 && state !== "flight") {
+      ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 2;
+      for (let i = 0; i < 7; i++) {
+        const y = H * (.12 + ((i * 53) % 40) / 100), len = 40 + (i * 37) % 60;
+        const x = W - ((time * 900 + i * 213) % (W + 200));
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+      }
+    }
+
+    // stands
+    const st = gy - H * .3;
+    ctx.fillStyle = "#33406b"; ctx.fillRect(-20, st, W + 40, gy - st);
+    ctx.fillStyle = "#283357"; ctx.fillRect(-20, st - 8, W + 40, 10);
+    const rows = 5, rh = (gy - st - 22) / rows, sp = 13, off = -(camX * ppm * .3);
+    for (let r = 0; r < rows; r++) {
+      const o = ((off + r * 6) % sp + sp) % sp;
+      for (let x = o - sp; x < W + sp; x += sp) {
+        const idx = Math.floor((x - off) / sp) + r * 7;
+        ctx.fillStyle = CROWD[((idx * 2654435761) >>> 0) % CROWD.length];
+        const bob = state === "landed" ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
+        ctx.beginPath(); ctx.arc(x, st + 8 + r * rh - bob, 3.2, 0, 7); ctx.fill();
+      }
+    }
+    // advert boards
+    const bw = 120, bo = -(camX * ppm * .7);
+    for (let x = ((bo % bw) + bw) % bw - bw, i = 0; x < W + bw; x += bw, i++) {
+      const idx = Math.round((x - bo) / bw);
+      ctx.fillStyle = ["#ff4f5e", "#ffcd2e", "#2ec4b6"][((idx % 3) + 3) % 3];
+      ctx.fillRect(x, gy - 18, bw - 4, 18);
+    }
+
+    // ground: grass then runway lane
+    ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, gh);
+    ctx.fillStyle = "#3aa045";
+    const vx0 = camX - W / 2 / ppm - 5, vx1 = camX + W / 2 / ppm + 5;
+    for (let x = Math.floor(vx0 / 5) * 5; x < vx1; x += 10) ctx.fillRect(sx(x), gy, 5 * ppm, gh);
+    const laneTop = gy, laneH = (H - gy) * .55, lx = sx(0);
+    if (lx > -20) {
+      ctx.fillStyle = "#d9523a"; ctx.fillRect(-20, laneTop, lx + 20, laneH);
+      ctx.fillStyle = "rgba(0,0,0,.07)";
+      for (let x = Math.floor(vx0); x < Math.min(0, vx1); x++) if (((x % 2) + 2) % 2 === 0) ctx.fillRect(sx(x), laneTop, ppm * .5, laneH);
+      ctx.fillStyle = "#fff"; ctx.fillRect(-20, laneTop + laneH - 3, lx + 20, 3); ctx.fillRect(-20, laneTop, lx + 20, 2);
+    }
+    // field numbers
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = Math.max(14, Math.min(26, ppm * 1.4)) + "px 'Lilita One', Impact, sans-serif";
+    for (let x = 10; x <= 90; x += 10) {
+      const px = sx(x); if (px < -40 || px > W + 40) continue;
+      ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(px - 1.5, gy, 3, (H - gy) * .45);
+      ctx.fillText(String(x), px, gy + (H - gy) * .7);
+    }
+    // foul line: bold white board with red flags
+    if (lx > -40 && lx < W + 40) {
+      const lw = Math.max(6, ppm * .14);
+      ctx.fillStyle = "#fff"; ctx.fillRect(lx - lw / 2, gy, lw, laneH + 6);
+      ctx.fillStyle = "#fff"; ctx.fillRect(lx - 2, gy - 1.6 * ppm, 4, 1.6 * ppm);
+      ctx.fillStyle = "#ff4f5e"; ctx.beginPath(); ctx.moveTo(lx + 2, gy - 1.6 * ppm); ctx.lineTo(lx + 2 + .7 * ppm, gy - 1.35 * ppm); ctx.lineTo(lx + 2, gy - 1.1 * ppm); ctx.fill();
+    }
+
+    // trail
+    if (trail.length > 1) {
+      ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = Math.max(2, ppm * .08); ctx.lineCap = "round";
+      ctx.beginPath(); trail.forEach(([x, y], i) => i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))); ctx.stroke();
+    }
+
+    drawAthlete(sx, sy);
+    if (jav && !jav.foul) drawJav(sx(jav.x), sy(jav.y), jav.rot, jav.landed ? .1 : .5);
+
+    // landing flag
+    if (jav && jav.landed && !jav.foul) {
+      const px = sx(jav.x), top = gy - 3.2 * ppm - 30;
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(px - 1.5, top, 3, gy - top);
+      ctx.fillStyle = "#ffcd2e"; ctx.beginPath(); ctx.moveTo(px + 1.5, top); ctx.lineTo(px + 34, top + 10); ctx.lineTo(px + 1.5, top + 20); ctx.fill();
+    }
+
+    // particles
+    parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .8; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawJav(x, y, rot, frontFrac) {
+    const L = 2.6 * ppm;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(-rot); ctx.lineCap = "round";
+    ctx.strokeStyle = "#1b2340"; ctx.lineWidth = Math.max(3, ppm * .07);
+    ctx.beginPath(); ctx.moveTo(-L * (1 - frontFrac), 0); ctx.lineTo(L * frontFrac, 0); ctx.stroke();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, ppm * .04);
+    ctx.beginPath(); ctx.moveTo(-L * (1 - frontFrac) + 2, 0); ctx.lineTo(L * frontFrac - 6, 0); ctx.stroke();
+    ctx.strokeStyle = "#ffcd2e"; ctx.lineWidth = Math.max(4, ppm * .1);
+    ctx.beginPath(); ctx.moveTo(-.12 * ppm, 0); ctx.lineTo(.14 * ppm, 0); ctx.stroke();
+    ctx.fillStyle = "#ff4f5e"; ctx.beginPath(); ctx.moveTo(L * frontFrac + .12 * ppm, 0); ctx.lineTo(L * frontFrac - .1 * ppm, -.05 * ppm); ctx.lineTo(L * frontFrac - .1 * ppm, .05 * ppm); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAthlete(sx, sy) {
+    const u = ppm, x = sx(ax), moving = aSpeed > .5, ph = ax * 2.3, sw = moving ? Math.sin(ph) : 0;
+    const P = (dx, y) => [x + dx * u, sy(y)];
+    const bounce = moving ? Math.abs(Math.cos(ph)) * .06 : 0;
+    const hip = P(0, .95 + bounce), sh = P(.14, 1.47 + bounce), head = P(.2, 1.7 + bounce);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.fillStyle = "rgba(0,0,0,.2)"; ctx.beginPath(); ctx.ellipse(x, sy(0) + 2, .4 * u, .07 * u, 0, 0, 7); ctx.fill();
+    const limb = "#3b2a22";
+    [sw, -sw].forEach((s, i) => {
+      const knee = P(.28 * s + .06, .5 + bounce + (s > 0 ? .1 * s : 0));
+      const foot = P(.45 * s - .08, Math.max(0, .14 * Math.sin(ph + i * Math.PI)));
+      ctx.strokeStyle = i ? "#2a1d17" : limb; ctx.lineWidth = Math.max(4, u * .13);
+      ctx.beginPath(); ctx.moveTo(...hip); ctx.lineTo(...knee); ctx.lineTo(...foot); ctx.stroke();
+      ctx.fillStyle = "#ff4f5e"; ctx.beginPath(); ctx.arc(foot[0] + .05 * u, foot[1], u * .07, 0, 7); ctx.fill();
+    });
+    // shorts + vest
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = Math.max(7, u * .24);
+    ctx.beginPath(); ctx.moveTo(...hip); ctx.lineTo(...P(.04, 1.08 + bounce)); ctx.stroke();
+    ctx.strokeStyle = "#2a64e0"; ctx.lineWidth = Math.max(8, u * .26);
+    ctx.beginPath(); ctx.moveTo(...P(.04, 1.08 + bounce)); ctx.lineTo(...sh); ctx.stroke();
+    ctx.fillStyle = limb; ctx.beginPath(); ctx.arc(head[0], head[1], .14 * u, 0, 7); ctx.fill();
+    ctx.fillStyle = "#ffcd2e"; ctx.fillRect(head[0] - .15 * u, head[1] - .06 * u, .3 * u, .05 * u);
+    // front arm
+    ctx.strokeStyle = limb; ctx.lineWidth = Math.max(3.5, u * .1);
+    const fa = state === "charging" ? P(.55, 1.5 + bounce) : P(.24 - .2 * sw, 1.05 + bounce);
+    ctx.beginPath(); ctx.moveTo(...sh); ctx.lineTo(...fa); ctx.stroke();
+    // throwing arm + javelin
+    const thrown = jav && !jav.foul;
+    if (thrown) { ctx.beginPath(); ctx.moveTo(...sh); ctx.lineTo(...P(.6, 1.65)); ctx.stroke(); return; }
+    const charging = state === "charging";
+    const tilt = charging ? Math.max(.08, angle * Math.PI / 180) : .08;
+    const hand = charging ? P(-.45, 1.55 + bounce) : P(-.08, 1.62 + bounce);
+    ctx.beginPath(); ctx.moveTo(...sh); ctx.lineTo(...hand); ctx.stroke();
+    drawJav(hand[0], hand[1], tilt, .55);
+  }
+
+  let last = performance.now();
+  function frame(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(frame); }
+  showMenu(false);
+  requestAnimationFrame(frame);
+})();
+</script>
