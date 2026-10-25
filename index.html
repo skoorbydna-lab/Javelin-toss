@@ -277,7 +277,7 @@ li.fresh .r { color: #fff; }
     appId: "1:310679295817:web:65a93e4940e62a5ae5ac98"
   };
   const COLL = { [KEY]: "throws", [KEY_AVG]: "averages" };
-  let freshAvg = -1, tab = "throw", fdb = null, online = false;
+  let freshAvg = -1, tab = "throw", fdb = null, online = false, netErr = "";
   const remote = { [KEY]: [], [KEY_AVG]: [] }, freshIds = { [KEY]: null, [KEY_AVG]: null };
 
   function playerName() { return ($("pname").value.trim() || "Player").slice(0, 14); }
@@ -296,7 +296,7 @@ li.fresh .r { color: #fff; }
     const rank = remote[k].filter(r => r.d >= d).length;
     const ref = fdb.collection(COLL[k]).doc();
     freshIds[k] = ref.id;
-    ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+    ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => { netErr = "save: " + (err.code || err.message); renderRecords(); });
     return rank < 5 ? rank : -1;
   }
   function saveRecord(d) { freshIdx = addRecord(KEY, d); return freshIdx; }
@@ -319,22 +319,22 @@ li.fresh .r { color: #fff; }
     const cur = tab === "throw" ? a : b;
     $("empty").textContent = tab === "throw" ? "No records yet. Be the first!" : "Finish all three throws to post an average.";
     $("empty").hidden = cur.length > 0;
-    $("src").textContent = online ? "Everyone's scores, live" : "Scores on this device";
+    $("src").textContent = online ? "Everyone's scores, live" + (netErr ? " (" + netErr + ")" : "") : "Scores on this device" + (netErr ? " (online board: " + netErr + ")" : "");
     $("src").classList.toggle("live", online);
     $("clear").hidden = online || a.length + b.length === 0;
   }
   function connect() {
     try {
-      if (!window.firebase) return;
+      if (!window.firebase) { netErr = "library didn't load"; return; }
       firebase.initializeApp(FIREBASE_CONFIG);
       fdb = firebase.firestore();
       [KEY, KEY_AVG].forEach(k => {
         fdb.collection(COLL[k]).orderBy("d", "desc").limit(5).onSnapshot(snap => {
           remote[k] = snap.docs.map(doc => ({ id: doc.id, n: String(doc.get("n") || "Player"), d: Number(doc.get("d")) || 0 }));
           online = true; renderRecords();
-        }, () => { online = false; renderRecords(); });
+        }, err => { online = false; netErr = err.code || err.message || "error"; renderRecords(); });
       });
-    } catch (e) { online = false; }
+    } catch (e) { online = false; netErr = e.code || e.message || "error"; }
   }
   connect();
   $("tabThrow").addEventListener("click", () => { tab = "throw"; renderRecords(); });
