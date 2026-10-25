@@ -1,5 +1,5 @@
 # Tap Athletics
 
-Two athletics events in one game: Javelin (sprint, hold to raise the javelin, release before the foul line; three throws per round) and the 100m sprint (react to the gun and three random cues for bursts of speed). Shared online leaderboards for longest throw, best throw average and fastest 100m.
+Three athletics events plus an Olympics mode: 100m (react to the gun and three random cues), long jump (timed start taps, a reaction cue, take off at the board and hold to set the angle) and javelin (run, hold to raise the javelin, release before the line). Olympics plays all three and scores them with decathlon points. Shared online leaderboards keep each player's best for Olympics, 100m, long jump and javelin.
 
 Play: https://skoorbydna-lab.github.io/javelin-toss/
