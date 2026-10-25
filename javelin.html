@@ -183,7 +183,7 @@ li.fresh .r { color: #fff; }
       <ol id="listAvg" hidden></ol>
       <ol id="listSpr" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 2.0</p>
+      <p class="ver">Version 2.1</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -651,14 +651,33 @@ li.fresh .r { color: #fff; }
   const RIVAL_KITS = ["#e8443a", "#f2b21b", "#8a4fd8"];
   const S = { x: 0, v: 0, boost: 0, t: 0, started: false, timer: 0, setDelay: 1.5, cueD: [], ci: 0, cueAt: null, rts: [], rivals: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, lastClock: "" };
 
+  // one standard race, recorded once, then stretched to finish at each ghost's exact time
+  const GHOST = (() => {
+    const dt = 1 / 120, xs = [], rts = [0.2, 0.25, 0.25, 0.25], cues = [25, 52, 80];
+    let t = 0, x = 0, v = 0, boost = 0, ci = 0, pend = null, started = false, T = null, after = 0;
+    while (after < 2) {
+      if (!started && t >= rts[0]) { started = true; boost = SP.START_B * quick(rts[0]); }
+      if (started && T === null) {
+        if (ci < 3 && x >= cues[ci]) { pend = t + rts[ci + 1]; ci++; }
+        if (pend !== null && t >= pend) { boost = Math.min(SP.MAXB, boost + SP.CUE_B * quick(rts[ci])); pend = null; }
+        v += (SP.VB + boost - v) / (t - rts[0] < 2.5 ? 0.8 : 0.45) * dt; boost *= Math.exp(-dt / SP.DECAY);
+      } else if (T !== null) { v = Math.max(0, v - 5 * dt); after += dt; }
+      const px = x; x += v * dt; t += dt;
+      if (T === null && x >= 100) T = t - dt + dt * (100 - px) / (x - px);
+      xs.push(x);
+    }
+    return { dt, xs, T, start: rts[0] };
+  })();
   function resetSprint() {
     Object.assign(S, { x: 0, v: 0, boost: 0, t: 0, started: false, timer: 0, ci: 0, cueAt: null, rts: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, lastClock: "" });
     // three reaction cues, one in each part of the race, never in the same spots twice
     S.cueD = [rand(16, 34), rand(42, 62), rand(70, 90)];
-    S.rivals = RIVAL_KITS.map(kit => ({
-      kit, x: 0, v: 0, boost: 0, started: false, ci: 0, pendAt: null, time: null,
-      rts: [rand(0.13, 0.3), rand(0.16, 0.42), rand(0.16, 0.42), rand(0.16, 0.42)]
-    }));
+    // rivals are ghosts of the top three times on the 100m board (computer runners fill any gaps)
+    const board = (online ? remote[KEY_SPR] : loadLocal(KEY_SPR)).slice(0, 3).map(r => ({ name: r.n, T: Number(r.d) }));
+    const cpu = [10.35, 10.75, 11.2].map(T => ({ name: "CPU", T: Math.round((T + rand(-.15, .15)) * 100) / 100 }));
+    while (board.length < 3) board.push(cpu[board.length]);
+    // slowest in the far lane, fastest right next to you
+    S.rivals = board.slice().reverse().map((g, i) => ({ kit: RIVAL_KITS[i], name: g.name, T: g.T, x: 0, v: 0, started: false, time: g.T }));
     parts = []; stepIdx = 0; aSpeed = 0;
   }
   function startSprint() {
@@ -747,10 +766,10 @@ li.fresh .r { color: #fff; }
       }
       // rivals
       S.rivals.forEach(r => {
-        if (!r.started) { if (S.t >= r.rts[0]) { r.started = true; r.boost = SP.START_B * quick(r.rts[0]); } else return; }
-        if (r.ci < 3 && r.x >= S.cueD[r.ci]) { r.pendAt = S.t + r.rts[r.ci + 1]; r.ci++; }
-        if (r.pendAt !== null && S.t >= r.pendAt) { r.boost = Math.min(SP.MAXB, r.boost + SP.CUE_B * quick(r.rts[r.ci])); r.pendAt = null; }
-        stepRunner(r, dt, S.t - r.rts[0]);
+        const tt = S.t * GHOST.T / r.T, i = tt / GHOST.dt;
+        const i0 = Math.min(GHOST.xs.length - 1, Math.floor(i)), i1 = Math.min(GHOST.xs.length - 1, i0 + 1);
+        const nx = GHOST.xs[i0] + (GHOST.xs[i1] - GHOST.xs[i0]) * (i - Math.floor(i));
+        r.v = Math.max(0, (nx - r.x) / dt); r.x = nx; r.started = tt >= GHOST.start;
       });
       if (state === "srace" && S.time === null) {
         const c = S.t.toFixed(2); if (c !== S.lastClock) { S.lastClock = c; $("hudBest").textContent = c; }
@@ -845,6 +864,13 @@ li.fresh .r { color: #fff; }
       const base = top + laneH * (i + .85);
       const p = r.started ? 0 : (state === "smarks" || state === "sready" ? 1 : 2);
       drawRunner(sx(r.x), base, ppm, r.x * 2.2, r.v > .5, r === S ? "#2a64e0" : r.kit, p);
+      const tag = r === S ? "YOU" : r.name + "  " + r.T.toFixed(2);
+      const tx = sx(r.x) + .2 * ppm, ty = base - 2.15 * ppm;
+      ctx.font = "800 " + Math.max(10, Math.min(14, ppm * .32)) + "px Nunito, sans-serif";
+      const w = ctx.measureText(tag).width + 10;
+      ctx.fillStyle = r === S ? "rgba(42,100,224,.9)" : "rgba(27,35,64,.75)";
+      ctx.fillRect(tx - w / 2, ty - 9, w, 18);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tag, tx, ty + 1);
     });
     // dust (player lane)
     const pbase = top + laneH * 3.85;
