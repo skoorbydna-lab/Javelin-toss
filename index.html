@@ -102,6 +102,10 @@ li.fresh { background: var(--hot) !important; }
 li.fresh .r { color: #fff; }
 .empty { color: #9fb0e0; font-weight: 700; font-size: 14px; margin: 0; }
 .ghost { margin-top: 10px; font: 800 12px var(--body); color: #9fb0e0; background: none; border: 2px solid #2f3a68; border-radius: 10px; padding: 4px 10px; cursor: pointer; }
+.admin { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+.admin .ghost { margin-top: 0; }
+#adminPanel { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.adminMsg { width: 100%; margin: 0; font-size: 12px; font-weight: 700; color: #9fb0e0; }
 .ghost.arm { color: var(--hot); border-color: var(--hot); }
 
 #rotate { position: fixed; inset: 0; z-index: 9; background: var(--panel); display: none; place-items: center; text-align: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
@@ -136,7 +140,7 @@ li.fresh .r { color: #fff; }
     <div>
       <h1 class="logo" id="mTitle">Javelin<br><em>Toss</em></h1>
       <div id="mIntro">
-        <p class="sub">Tap to sprint. Hold to raise the javelin. Let go to launch. Release close to the line at the perfect angle — step over and it's a foul!</p>
+        <p class="sub">Tap to start running. Your athlete speeds up all the way down the runway, and faster means further. Hold to raise the javelin, let go to launch. Throw late, at the perfect angle, but step over the line and it's a foul!</p>
       </div>
       <div id="mResults" hidden>
         <div class="stats">
@@ -157,7 +161,14 @@ li.fresh .r { color: #fff; }
       <ol id="list"></ol>
       <ol id="listAvg" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <button class="ghost" id="clear" type="button">Clear records</button>
+      <div class="admin">
+        <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
+        <span id="adminPanel" hidden>
+          <button class="ghost" id="resetThrow" type="button">Reset longest throw</button>
+          <button class="ghost" id="resetAvg" type="button">Reset averages</button>
+        </span>
+        <p class="adminMsg" id="adminMsg" hidden></p>
+      </div>
     </div>
   </div>
 </div>
@@ -169,9 +180,12 @@ li.fresh .r { color: #fff; }
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 (function () {
-  const RUN_START = -30, SPEED = 8, RATE = 60, V0 = 27, G = 9.81, H0 = 1.9, FLIGHT_SPEED = 1.5, MAX = V0 * V0 / G;
+  const RUN_START = -25, ACC = 2, VBASE = 12, VGAIN = 1.6, RATE = 60, G = 9.81, H0 = 1.9, FLIGHT_SPEED = 1.5;
+  const MAX = Math.pow(VBASE + VGAIN * Math.sqrt(2 * ACC * -RUN_START), 2) / G;
+  const ADMIN_EMAIL = "skoorbydna@gmail.com";
   const KEY = "javelin-toss-records-v1";
   const $ = id => document.getElementById(id);
   const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
@@ -218,13 +232,14 @@ li.fresh .r { color: #fff; }
     setPrompt("TAP TO RUN", true); setGo("RUN"); renderHud();
   }
   function startGame() { throws = []; freshIdx = -1; freshAvg = -1; freshIds[KEY] = freshIds[KEY_AVG] = null; $("menu").hidden = true; newThrow(); }
-  function startRun() { state = "running"; aSpeed = SPEED; setPrompt("HOLD TO AIM"); setGo("HOLD"); }
+  function startRun() { state = "running"; aSpeed = 0; setPrompt("HOLD TO AIM"); setGo("HOLD"); }
   function startCharge() { state = "charging"; angle = 0; $("go").classList.add("held"); setPrompt("LET GO TO THROW!"); }
   function release() {
     $("go").classList.remove("held");
-    const th = angle * Math.PI / 180, range = MAX * Math.sin(2 * th);
-    const T = Math.max(0.35, 2 * V0 * Math.sin(th) / G);
-    jav = { x0: ax + 0.2, th, T, t: 0, x: ax + 0.2, y: H0, rot: th, landX: ax + 0.2 + range, foul: false, landed: false };
+    const V = VBASE + VGAIN * aSpeed;
+    const th = angle * Math.PI / 180, range = V * V / G * Math.sin(2 * th);
+    const T = Math.max(0.35, 2 * V * Math.sin(th) / G);
+    jav = { V, x0: ax + 0.2, th, T, t: 0, x: ax + 0.2, y: H0, rot: th, landX: ax + 0.2 + range, foul: false, landed: false };
     jav.dist = Math.max(0, Math.round(jav.landX * 100) / 100);
     state = "flight"; setPrompt(""); setGo("");
   }
@@ -321,7 +336,6 @@ li.fresh .r { color: #fff; }
     $("empty").hidden = cur.length > 0;
     $("src").textContent = online ? "Everyone's scores, live" + (netErr ? " (" + netErr + ")" : "") : "Scores on this device" + (netErr ? " (online board: " + netErr + ")" : "");
     $("src").classList.toggle("live", online);
-    $("clear").hidden = online || a.length + b.length === 0;
   }
   function connect() {
     try {
@@ -339,13 +353,48 @@ li.fresh .r { color: #fff; }
   connect();
   $("tabThrow").addEventListener("click", () => { tab = "throw"; renderRecords(); });
   $("tabAvg").addEventListener("click", () => { tab = "avg"; renderRecords(); });
-  let armT;
-  $("clear").addEventListener("click", () => {
-    const c = $("clear");
-    if (!c.classList.contains("arm")) { c.classList.add("arm"); c.textContent = "Tap again to clear"; armT = setTimeout(() => { c.classList.remove("arm"); c.textContent = "Clear records"; }, 3000); return; }
-    clearTimeout(armT); try { localStorage.removeItem(KEY); localStorage.removeItem(KEY_AVG); } catch (_) {}
-    c.classList.remove("arm"); c.textContent = "Clear records"; freshIdx = -1; freshAvg = -1; renderRecords();
-  });
+
+  // ---------- owner-only reset (Google sign-in; the database rules only let the owner delete)
+  function adminMsg(t) { $("adminMsg").textContent = t; $("adminMsg").hidden = !t; }
+  let isAdmin = false;
+  function setupAdmin() {
+    if (!window.firebase || !firebase.auth) { $("adminBtn").hidden = true; return; }
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(u => {
+      isAdmin = !!(u && u.email && u.email.toLowerCase() === ADMIN_EMAIL);
+      if (u && !isAdmin) { adminMsg("Only the game's owner can reset scores."); auth.signOut(); }
+      $("adminPanel").hidden = !isAdmin;
+      $("adminBtn").textContent = isAdmin ? "Sign out" : "Owner sign-in";
+      if (isAdmin) adminMsg("Signed in as owner.");
+    });
+    $("adminBtn").addEventListener("click", () => {
+      if (isAdmin) { auth.signOut(); adminMsg(""); return; }
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => adminMsg("Sign-in failed: " + (err.code || err.message)));
+    });
+    [["resetThrow", KEY, "longest throw"], ["resetAvg", KEY_AVG, "average"]].forEach(([id, k, label]) => {
+      let armT;
+      const b = $(id), orig = b.textContent;
+      b.addEventListener("click", async () => {
+        if (!b.classList.contains("arm")) {
+          b.classList.add("arm"); b.textContent = "Tap again to confirm";
+          armT = setTimeout(() => { b.classList.remove("arm"); b.textContent = orig; }, 3000); return;
+        }
+        clearTimeout(armT); b.classList.remove("arm"); b.textContent = orig;
+        try {
+          adminMsg("Resetting " + label + " board…");
+          for (;;) {
+            const snap = await fdb.collection(COLL[k]).limit(300).get();
+            if (snap.empty) break;
+            const batch = fdb.batch(); snap.docs.forEach(d => batch.delete(d.ref)); await batch.commit();
+          }
+          try { localStorage.removeItem(k); } catch (_) {}
+          adminMsg("The " + label + " board is cleared.");
+          renderRecords();
+        } catch (err) { adminMsg("Reset failed: " + (err.code || err.message)); }
+      });
+    });
+  }
+  setupAdmin();
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
   $("play").addEventListener("click", startGame);
@@ -375,7 +424,7 @@ li.fresh .r { color: #fff; }
   function update(dt) {
     time += dt;
     if (state === "running" || state === "charging") {
-      ax += SPEED * dt;
+      aSpeed += ACC * dt; ax += aSpeed * dt;
       if (state === "charging") angle = Math.min(90, angle + RATE * dt);
       dustT -= dt; if (dustT < 0) { dustT = .14; puff(ax - .2, .05, 2, 1.5, "#e98a6c"); }
       if (ax > 0.05) foul();
@@ -385,9 +434,9 @@ li.fresh .r { color: #fff; }
       const j = jav;
       j.t = Math.min(j.T, j.t + dt * FLIGHT_SPEED);
       const t = j.t;
-      j.x = j.x0 + V0 * Math.cos(j.th) * t;
-      j.y = Math.max(0, H0 * (1 - t / j.T) + V0 * Math.sin(j.th) * t - G * t * t / 2);
-      j.rot = Math.atan2(V0 * Math.sin(j.th) - G * t - H0 / j.T, V0 * Math.cos(j.th));
+      j.x = j.x0 + j.V * Math.cos(j.th) * t;
+      j.y = Math.max(0, H0 * (1 - t / j.T) + j.V * Math.sin(j.th) * t - G * t * t / 2);
+      j.rot = Math.atan2(j.V * Math.sin(j.th) - G * t - H0 / j.T, j.V * Math.cos(j.th));
       trail.push([j.x, j.y]); if (trail.length > 28) trail.shift();
       if (t >= j.T) {
         j.landed = true; j.x = j.landX; j.y = 0; j.rot = Math.min(j.rot, -.4);
