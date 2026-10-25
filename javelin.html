@@ -73,6 +73,7 @@ canvas { display: block; width: 100%; height: 100%; }
 @media (max-width: 520px) { .card { grid-template-columns: 1fr; } }
 .logo { font-family: var(--display); font-size: clamp(40px, 11vh, 64px); line-height: .9; margin: 0; color: #fff; text-shadow: 0 5px 0 var(--hot); transform: rotate(-3deg); transform-origin: left; }
 .logo em { font-style: normal; color: var(--sun); }
+.byline { margin: 6px 0 0; font-weight: 800; font-size: 13px; letter-spacing: .08em; color: #b9c4ea; }
 .sub { margin: 12px 0 0; color: #b9c4ea; font-weight: 700; font-size: 14px; line-height: 1.4; }
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 4px; }
 .stat { background: #26305a; border-radius: 14px; padding: 8px 12px; }
@@ -143,6 +144,7 @@ li.fresh .r { color: #fff; }
   <div class="card">
     <div>
       <h1 class="logo" id="mTitle">Javelin<br><em>Toss</em></h1>
+      <p class="byline" id="byline">by Brooky</p>
       <div id="mIntro">
         <p class="sub">Tap to start running. Your athlete speeds up all the way down the runway, and faster means further. Hold to raise the javelin, let go to launch. Throw late, at the perfect angle, but step over the line and it's a foul!</p>
       </div>
@@ -276,7 +278,7 @@ li.fresh .r { color: #fff; }
   }
   function showMenu(results) {
     state = "menu"; $("toast").hidden = true;
-    $("mIntro").hidden = results; $("mResults").hidden = !results;
+    $("mIntro").hidden = results; $("byline").hidden = results; $("mResults").hidden = !results;
     $("mTitle").innerHTML = results ? "Final<br><em>Results</em>" : "Javelin<br><em>Toss</em>";
     $("play").textContent = results ? "PLAY AGAIN" : "PLAY";
     if (results) {
