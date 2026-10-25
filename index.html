@@ -108,7 +108,7 @@ canvas { display: block; width: 100%; height: 100%; }
 .src.live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-right: 6px; vertical-align: 1px; }
 .tab:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .recs h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0 0 6px; color: #fff; }
-ol { list-style: none; margin: 0; padding: 0; }
+ol { list-style: none; margin: 0; padding: 0 4px 0 0; max-height: min(42vh, 280px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #4a5690 transparent; }
 li { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
 li:nth-child(odd) { background: #222b52; }
 li .r { font-family: var(--display); color: #9fb0e0; }
@@ -325,7 +325,7 @@ li.fresh .r { color: #fff; }
   function loadLocal(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } }
   function addLocal(k, e) {
     const recs = loadLocal(k); recs.push(e); recs.sort((a, b) => b.d - a.d);
-    const top = recs.slice(0, 5);
+    const top = recs.slice(0, 100);
     try { localStorage.setItem(k, JSON.stringify(top)); } catch (_) {}
     return top.indexOf(e);
   }
@@ -338,7 +338,7 @@ li.fresh .r { color: #fff; }
     const ref = fdb.collection(COLL[k]).doc();
     freshIds[k] = ref.id;
     ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => { netErr = "save: " + (err.code || err.message); renderRecords(); });
-    return rank < 5 ? rank : -1;
+    return rank < 100 ? rank : -1;
   }
   function saveRecord(d) { freshIdx = addRecord(KEY, d); return freshIdx; }
   function fillList(el, recs, k) {
@@ -349,6 +349,7 @@ li.fresh .r { color: #fff; }
       if (online ? (r.id && r.id === freshIds[k]) : i === freshLocal) li.className = "fresh";
       li.innerHTML = '<span class="r">' + (i + 1) + '</span><span class="n"></span><span class="d">' + Number(r.d).toFixed(2) + '</span>';
       li.querySelector(".n").textContent = r.n; el.appendChild(li);
+      if (li.className === "fresh") requestAnimationFrame(() => { if (!el.hidden) el.scrollTop = Math.max(0, li.offsetTop - el.offsetTop - el.clientHeight / 2); });
     });
   }
   function renderRecords() {
@@ -369,7 +370,7 @@ li.fresh .r { color: #fff; }
       firebase.initializeApp(FIREBASE_CONFIG);
       fdb = firebase.firestore();
       [KEY, KEY_AVG].forEach(k => {
-        fdb.collection(COLL[k]).orderBy("d", "desc").limit(5).onSnapshot(snap => {
+        fdb.collection(COLL[k]).orderBy("d", "desc").limit(100).onSnapshot(snap => {
           remote[k] = snap.docs.map(doc => ({ id: doc.id, n: String(doc.get("n") || "Player"), d: Number(doc.get("d")) || 0 }));
           online = true; renderRecords();
         }, err => { online = false; netErr = err.code || err.message || "error"; renderRecords(); });
