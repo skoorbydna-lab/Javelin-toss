@@ -169,7 +169,7 @@ li.fresh .r { color: #fff; }
       <ol id="list"></ol>
       <ol id="listAvg" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 1.7</p>
+      <p class="ver">Version 1.8</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -264,10 +264,10 @@ li.fresh .r { color: #fff; }
     throws.push(d);
     state = "landed";
     let rec = false;
-    if (d !== null) rec = saveRecord(d) === 0;
+    if (d !== null) rec = d === best() && rankOf(KEY, d) === 0;
     renderHud();
     const last = throws.length >= 3;
-    if (last) { freshAvg = addRecord(KEY_AVG, avg()); tab = freshAvg >= 0 && freshIdx < 0 ? "avg" : "throw"; }
+    if (last) { const b = best(); freshIdx = b === null ? -1 : addRecord(KEY, b); freshAvg = addRecord(KEY_AVG, avg()); tab = freshAvg >= 0 && freshIdx < 0 ? "avg" : "throw"; }
     const next = last ? "TAP FOR RESULTS" : "TAP FOR NEXT THROW";
     if (d === null) showToast("FOUL!", "Over the line", next, true);
     else {
@@ -326,7 +326,7 @@ li.fresh .r { color: #fff; }
     ref.set({ n: e.n, d, t: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => { netErr = "save: " + (err.code || err.message); renderRecords(); });
     return rank < 100 ? rank : -1;
   }
-  function saveRecord(d) { freshIdx = addRecord(KEY, d); return freshIdx; }
+  function rankOf(k, d) { return (online ? remote[k] : loadLocal(k)).filter(r => r.d >= d).length; }
   function fillList(el, recs, k) {
     el.innerHTML = "";
     const freshLocal = k === KEY ? freshIdx : freshAvg;
