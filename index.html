@@ -199,7 +199,7 @@ li.fresh .r { color: #fff; }
       <ol id="listAvg" hidden></ol>
       <ol id="listSpr" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 2.1</p>
+      <p class="ver">Version 2.2</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -689,9 +689,17 @@ li.fresh .r { color: #fff; }
     // three reaction cues, one in each part of the race, never in the same spots twice
     S.cueD = [rand(16, 34), rand(42, 62), rand(70, 90)];
     // rivals are ghosts of the top three times on the 100m board (computer runners fill any gaps)
-    const board = (online ? remote[KEY_SPR] : loadLocal(KEY_SPR)).slice(0, 3).map(r => ({ name: r.n, T: Number(r.d) }));
-    const cpu = [10.35, 10.75, 11.2].map(T => ({ name: "CPU", T: Math.round((T + rand(-.15, .15)) * 100) / 100 }));
-    while (board.length < 3) board.push(cpu[board.length]);
+    // each player appears once, with their best time
+    const seen = new Set(), board = [];
+    for (const r of (online ? remote[KEY_SPR] : loadLocal(KEY_SPR))) {
+      const key = String(r.n).trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key); board.push({ name: r.n, T: Number(r.d) });
+      if (board.length === 3) break;
+    }
+    const cpuNames = ["Dash", "Bolt-bot", "Zippy", "Rocket", "Blur"].filter(n => !seen.has(n.toLowerCase()));
+    const cpuTimes = [10.35, 10.75, 11.2];
+    while (board.length < 3) board.push({ name: cpuNames.shift(), T: Math.round((cpuTimes[board.length] + rand(-.15, .15)) * 100) / 100 });
     // slowest in the far lane, fastest right next to you
     S.rivals = board.slice().reverse().map((g, i) => ({ kit: RIVAL_KITS[i], name: g.name, T: g.T, x: 0, v: 0, started: false, time: g.T }));
     parts = []; stepIdx = 0; aSpeed = 0;
@@ -757,7 +765,7 @@ li.fresh .r { color: #fff; }
       if (S.timer > 1.4) { state = "sset"; S.timer = 0; S.setDelay = rand(1.0, 2.8); setPrompt("SET…"); }
     } else if (state === "sset") {
       S.timer += dt;
-      if (S.timer >= S.setDelay) { state = "sgun"; S.t = 0; S.flash = .25; sfx.gun(); setPrompt("GO!"); setGo("TAP!"); setCue(true); }
+      if (S.timer >= S.setDelay) { state = "sgun"; S.t = 0; S.flash = .25; sfx.gun(); setPrompt("GO! TAP ANYWHERE"); setGo("TAP!"); setCue(true); }
     }
     const racing = state === "sgun" || state === "srace" || (state === "sdone" && !S.dq);
     if (racing) {
@@ -768,7 +776,7 @@ li.fresh .r { color: #fff; }
         const prevX = S.x;
         stepRunner(S, dt, S.t - S.rts[0]);
         if (S.ci < 3 && S.x >= S.cueD[S.ci] && S.time === null) {
-          S.ci++; S.cueAt = S.t; sfx.beep(); setGo("TAP!"); setCue(true); setPrompt("TAP!");
+          S.ci++; S.cueAt = S.t; sfx.beep(); setGo("TAP!"); setCue(true); setPrompt("TAP ANYWHERE!");
         }
         if (S.cueAt !== null && S.t - S.cueAt > SP.WINDOW) {
           S.cueAt = null; S.rts.push(null); setCue(false); setGo(""); setPrompt(""); say("MISSED!"); renderHud();
