@@ -160,7 +160,11 @@ canvas { display: block; width: 100%; height: 100%; }
 .tab:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .play.oly { grid-column: 1 / -1; background: linear-gradient(90deg, #2a64e0, #7c5cff 30%, #ff4f5e 55%, #ffcd2e 80%, #2ec4b6); color: #fff; text-shadow: 0 2px 0 rgba(27,35,64,.6); box-shadow: 0 6px 0 #0e1428; }
 .play.oly:active { box-shadow: 0 2px 0 #0e1428; }
-.olytag { position: absolute; left: 50%; top: max(70px, calc(env(safe-area-inset-top, 0px) + 64px)); transform: translateX(-50%); padding: 5px 14px; border-radius: 12px; background: rgba(27,35,64,.8); color: var(--sun); font-weight: 900; font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+.topinfo { position: absolute; left: 50%; top: max(66px, calc(env(safe-area-inset-top, 0px) + 60px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; max-width: calc(100% - 32px); }
+.rectag { padding: 3px 12px; border-radius: 10px; background: rgba(27,35,64,.8); color: #fff; font-weight: 900; font-size: 12px; letter-spacing: .05em; white-space: nowrap; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rectag b { color: var(--sun); font-weight: 900; }
+.rectag .wr { color: var(--teal); }
+.olytag { padding: 5px 14px; border-radius: 12px; background: rgba(27,35,64,.8); color: var(--sun); font-weight: 900; font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
 .events { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
 .events .play { margin-top: 0; font-size: clamp(16px, 4vh, 23px); padding: 10px 4px; line-height: 1.05; }
 .play.lj { background: var(--hot); color: #fff; box-shadow: 0 6px 0 #b8293a; }
@@ -233,7 +237,10 @@ li.fresh .r { color: #fff; }
         <div class="best"><b id="hudBestK">BEST</b><span id="hudBest">—</span></div>
       </div>
     </div>
-    <div class="olytag" id="olyTag" hidden></div>
+    <div class="topinfo">
+      <div class="olytag" id="olyTag" hidden></div>
+      <div class="rectag" id="recTag" hidden></div>
+    </div>
     <div class="raise" id="raise" hidden>
       <p>NEXT HEIGHT</p>
       <div class="rb">
@@ -299,7 +306,7 @@ li.fresh .r { color: #fff; }
       <ol id="listR4" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.6</p>
+      <p class="ver">Version 3.7</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -374,7 +381,18 @@ li.fresh .r { color: #fff; }
   }
   function best() { const v = throws.filter(t => t !== null); return v.length ? Math.max(...v) : null; }
   function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
+  function renderRecTag() {
+    const el = $("recTag");
+    const b = { sprint: "spr", longjump: "lj", highjump: "hj", r400: "r4", javelin: "jav" }[mode];
+    if (state === "menu" || !b || typeof entries !== "function") { el.hidden = true; return; }
+    const val = d => b === "hj" ? fmtH(hjDecode(d).h) + " m" : b === "spr" || b === "r4" ? Number(d).toFixed(2) + " s" : Number(d).toFixed(2) + " m";
+    const pb = personalBest(b), top = entries(b)[0];
+    el.innerHTML = "<b>PB</b> " + (pb === null ? "—" : val(pb)) + "  ·  <b class=\"wr\">WR</b> " + (top ? val(top.d) + " " : "—");
+    if (top) el.appendChild(document.createTextNode(top.n));
+    el.hidden = false;
+  }
   function renderHud() {
+    renderRecTag();
     $("olyTag").hidden = !OLY.active;
     if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 5: 100M" : mode === "longjump" ? "EVENT 2 OF 5: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 5: HIGH JUMP" : mode === "r400" ? "EVENT 4 OF 5: 400M" : "EVENT 5 OF 5: JAVELIN");
     $("p3").hidden = mode !== "sprint";
@@ -570,6 +588,7 @@ li.fresh .r { color: #fff; }
     });
   }
   function renderRecords() {
+    renderRecTag();
     Object.keys(BOARDS).forEach(b => {
       fillList(b);
       const B = BOARDS[b], on = tab === b;
@@ -2043,7 +2062,7 @@ li.fresh .r { color: #fff; }
       ctx.font = Math.round(Math.min(W, H) * .07) + "px 'Lilita One', Impact, sans-serif";
       ctx.fillStyle = /^(STUMBLE|TYING|GOING|TOO)/.test(R4.msg) ? "#ff4f5e" : "#ffcd2e";
       ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      const y = H * .28; ctx.strokeText(R4.msg, W / 2, y); ctx.fillText(R4.msg, W / 2, y);
+      const y = H * .34; ctx.strokeText(R4.msg, W / 2, y); ctx.fillText(R4.msg, W / 2, y);
       ctx.globalAlpha = 1;
     }
     if (R4.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (R4.flash * 3).toFixed(2) + ")"; ctx.fillRect(-20, -20, W + 40, H + 40); }
