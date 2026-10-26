@@ -105,9 +105,15 @@ canvas { display: block; width: 100%; height: 100%; }
 .raise { position: absolute; left: 50%; bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px)); transform: translateX(-50%); pointer-events: auto; background: rgba(27,35,64,.9); border-radius: 18px; padding: 8px 12px 12px; text-align: center; }
 .raise p { margin: 0 0 6px; font-weight: 900; font-size: 12px; letter-spacing: .12em; color: var(--sun); }
 .rb { display: flex; gap: 8px; }
-.rb button { font-family: var(--display); font-size: 22px; color: var(--ink); background: var(--sun); border: 0; border-radius: 12px; padding: 6px 8px 4px; min-width: 56px; cursor: pointer; box-shadow: 0 4px 0 #c99700; display: grid; gap: 2px; line-height: 1; }
+.rb { align-items: center; }
+.rb button { font-family: var(--display); font-size: 30px; color: var(--ink); background: var(--sun); border: 0; border-radius: 12px; width: 52px; height: 48px; cursor: pointer; box-shadow: 0 4px 0 #c99700; line-height: 1; padding: 0; }
 .rb button:active { transform: translateY(3px); box-shadow: 0 1px 0 #c99700; }
-.rb button span { font-family: var(--body); font-weight: 800; font-size: 11px; }
+.rb button:disabled { opacity: .35; cursor: default; transform: none; }
+.rb .rgo { width: auto; padding: 0 16px; font-size: 24px; background: var(--teal); box-shadow: 0 4px 0 #1d8f85; }
+.rb .rgo:active { box-shadow: 0 1px 0 #1d8f85; }
+.rval { display: grid; min-width: 104px; color: #fff; line-height: 1.05; }
+.rval b { font-family: var(--display); font-weight: 400; font-size: 28px; font-variant-numeric: tabular-nums; }
+.rval span { font-weight: 800; font-size: 12px; color: var(--sun); }
 .rb button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
 .play.lj:active { box-shadow: 0 2px 0 #b8293a; }
 .play.alt { background: var(--teal); box-shadow: 0 6px 0 #1d8f85; }
@@ -160,13 +166,12 @@ li.fresh .r { color: #fff; }
     </div>
     <div class="olytag" id="olyTag" hidden></div>
     <div class="raise" id="raise" hidden>
-      <p>RAISE THE BAR BY</p>
+      <p>NEXT HEIGHT</p>
       <div class="rb">
-        <button type="button" id="raise1">+1cm<span>—</span></button>
-        <button type="button" id="raise2">+2cm<span>—</span></button>
-        <button type="button" id="raise3">+3cm<span>—</span></button>
-        <button type="button" id="raise4">+4cm<span>—</span></button>
-        <button type="button" id="raise5">+5cm<span>—</span></button>
+        <button type="button" class="pm" id="rMinus" aria-label="Lower by half a centimetre">−</button>
+        <div class="rval"><b id="rH">—</b><span id="rInc">—</span></div>
+        <button type="button" class="pm" id="rPlus" aria-label="Raise by half a centimetre">+</button>
+        <button type="button" class="rgo" id="rGo">GO</button>
       </div>
     </div>
     <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div><div class="stats2" id="tStats" hidden></div></div>
@@ -222,7 +227,7 @@ li.fresh .r { color: #fff; }
       <ol id="listHj" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.2</p>
+      <p class="ver">Version 3.3</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -359,7 +364,7 @@ li.fresh .r { color: #fff; }
       set(1, "POINTS", String(OLY.total)); set(2, "YOUR BEST", String(OLY.pb)); set(3, "BOARD", "#" + OLY.rank);
       $("rSeries").textContent = "100m: " + (r.spr ? r.spr.toFixed(2) + " s" : "DQ") + "  →  " + p.spr + " pts\n" +
         "Long jump: " + (r.lj !== null ? r.lj.toFixed(2) + " m" : "no jump") + "  →  " + p.lj + " pts\n" +
-        "High jump: " + (r.hj !== null ? r.hj.toFixed(2) + " m" : "no height") + "  →  " + p.hj + " pts\n" +
+        "High jump: " + (r.hj !== null ? fmtH(r.hj) + " m" : "no height") + "  →  " + p.hj + " pts\n" +
         "Javelin: " + (r.jav !== null ? r.jav.toFixed(2) + " m" : "no throw") + "  →  " + p.jav + " pts";
     } else if (results && mode === "sprint") {
       set(1, "TIME", S.dq ? "DQ" : S.time.toFixed(2) + " s");
@@ -368,10 +373,10 @@ li.fresh .r { color: #fff; }
       $("rSeries").textContent = S.dq ? "False start: disqualified" : "Reactions: " + S.rts.map(r => r === null ? "miss" : r.toFixed(2)).join("  ·  ");
     } else if (results && mode === "highjump") {
       const F = HJ.final;
-      set(1, "CLEARED", F ? F.h.toFixed(2) + " m" : "NM");
-      set(2, "MISSES", F ? String(F.tot) : "—");
-      set(3, "YOUR BEST", lastPB === null ? "—" : hjDecode(lastPB).h.toFixed(2) + " m");
-      $("rSeries").textContent = HJ.log.map(e => e.h.toFixed(2) + " " + (e.s || "–")).join("  ·  ");
+      set(1, "CLEARED", F ? fmtH(F.h) + " m" : "NM");
+      set(2, "JUMP SCORE", F ? (F.avg * 100).toFixed(1) + "%" : "—");
+      set(3, "YOUR BEST", lastPB === null ? "—" : fmtH(hjDecode(lastPB).h) + " m");
+      $("rSeries").textContent = HJ.log.map(e => fmtH(e.h) + " " + (e.s || "–")).join("  ·  ");
     } else if (results) {
       set(1, "BEST", m(best())); set(2, "AVERAGE", m(avg())); set(3, "YOUR BEST", m(lastPB));
       $("rSeries").textContent = throws.map(t => t === null ? "Foul" : t.toFixed(2)).join("  ·  ") + "   (fouls count as 0)";
@@ -1301,15 +1306,17 @@ li.fresh .r { color: #fff; }
   const xCount = s => (s.match(/X/g) || []).length;
   function hjEntry() { return HJ.log[HJ.log.length - 1]; }
   function hjFails() { return xCount(hjEntry().s); }
-  function hjDecode(c) { return { h: Math.floor(c / 1000) / 100, fAtH: 2 - Math.floor((c % 1000) / 100), tot: 99 - (c % 100) }; }
-  function hjFmt(c) { const r = hjDecode(c); return r.h.toFixed(2) + (r.fAtH || r.tot ? ' <small class="cb">' + r.fAtH + '/' + r.tot + '</small>' : ""); }
-  function hjSummary() { // official countback: fewest misses at the last height cleared, then fewest misses in total up to it
+  // board code: height in half-centimetres x 2000, plus the clearing jump's average score in tenths of a percent.
+  // Higher height wins; on equal heights the better-scored clearance wins. (Codes under 300000 are the old v3.2 format.)
+  function fmtH(h) { return Math.round(h * 1000) % 10 ? h.toFixed(3) : h.toFixed(2); }
+  function hjDecode(c) { return c < 300000 ? { h: Math.floor(c / 1000) / 100, avg: null } : { h: Math.floor(c / 2000) / 200, avg: (c % 2000) / 1000 }; }
+  function hjFmt(c) { const r = hjDecode(c); return fmtH(r.h) + (r.avg !== null ? ' <small class="cb">' + (r.avg * 100).toFixed(1) + '%</small>' : ""); }
+  function hjSummary() { // best height cleared and the average % of the jump that cleared it
     let last = -1; HJ.log.forEach((e, i) => { if (e.s.endsWith("O")) last = i; });
     if (last < 0) return null;
-    const fAtH = xCount(HJ.log[last].s); let tot = 0;
+    const e = HJ.log[last], avg = e.avg || 0; let tot = 0;
     for (let i = 0; i <= last; i++) tot += xCount(HJ.log[i].s);
-    const h = HJ.log[last].h;
-    return { h, fAtH, tot, code: Math.round(h * 100) * 1000 + (2 - fAtH) * 100 + (99 - Math.min(99, tot)) };
+    return { h: e.h, avg, tot, code: Math.round(e.h * 200) * 2000 + Math.round(avg * 1000) };
   }
   function startHJ() { mode = "highjump"; freshName.hj = null; $("menu").hidden = true; HJ.log = [{ h: 1.70, s: "" }]; HJ.final = null; newHJAttempt(); }
   function newHJAttempt() {
@@ -1376,22 +1383,23 @@ li.fresh .r { color: #fff; }
   }
   function hjResult(cleared, word) {
     const e = hjEntry(); e.s += cleared ? "O" : "X"; HJ.lastClear = cleared; HJ.holding = false;
+    if (cleared) e.avg = (HJ.f.R + HJ.f.Pq + HJ.f.A) / 3;
     setPrompt(""); setGo(""); $("go").classList.remove("held");
     if (cleared) {
       state = "hresult";
       const sum = hjSummary(), rec = !!sum && rankOf("hj", sum.code) === 0;
-      showToast(rec ? "NEW RECORD!" : "CLEARED!", HJ.bar.toFixed(2) + " m", "CHOOSE HOW MUCH TO RAISE THE BAR");
+      showToast(rec ? "NEW RECORD!" : "CLEARED!", fmtH(HJ.bar) + " m", "SET THE NEXT HEIGHT");
       showRaise();
       setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (HJ.bar - 1.6) / .8)), rec), 150);
     } else if (hjFails() >= 3) {
       state = "hdone"; HJ.final = hjSummary();
       lastPB = HJ.final ? submit("hj", HJ.final.code).best : personalBest("hj"); tab = OLY.active ? "oly" : "hj";
       if (OLY.active) OLY.res.hj = HJ.final ? HJ.final.h : null;
-      showToast("OUT!", HJ.final ? "Best " + HJ.final.h.toFixed(2) + " m" : "No height cleared", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
+      showToast("OUT!", HJ.final ? "Best " + fmtH(HJ.final.h) + " m" : "No height cleared", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
       sfx.groan();
     } else {
       state = "hresult";
-      showToast(word, HJ.bar.toFixed(2) + " m", "TAP FOR ATTEMPT " + (hjFails() + 1), true);
+      showToast(word, fmtH(HJ.bar) + " m", "TAP FOR ATTEMPT " + (hjFails() + 1), true);
       sfx.groan();
     }
     const f = HJ.f;
@@ -1402,13 +1410,19 @@ li.fresh .r { color: #fff; }
     }
     renderHud();
   }
-  function showRaise() {
-    $("raise").hidden = false;
-    for (let i = 1; i <= 5; i++) $("raise" + i).querySelector("span").textContent = (HJ.bar + i / 100).toFixed(2);
+  let raiseBy = 5; // cm, remembered between heights
+  const nextH = () => Math.round((HJ.bar + raiseBy / 100) * 1000) / 1000;
+  function paintRaise() {
+    $("rH").textContent = fmtH(nextH()) + " m";
+    $("rInc").textContent = "+" + raiseBy.toFixed(1) + " cm";
+    $("rMinus").disabled = raiseBy <= .5; $("rPlus").disabled = raiseBy >= 10;
   }
-  for (let i = 1; i <= 5; i++) $("raise" + i).addEventListener("click", () => {
+  function showRaise() { $("raise").hidden = false; paintRaise(); }
+  $("rMinus").addEventListener("click", () => { raiseBy = Math.max(.5, raiseBy - .5); paintRaise(); });
+  $("rPlus").addEventListener("click", () => { raiseBy = Math.min(10, raiseBy + .5); paintRaise(); });
+  $("rGo").addEventListener("click", () => {
     if (state !== "hresult" || $("raise").hidden) return;
-    HJ.log.push({ h: Math.round((HJ.bar + i / 100) * 100) / 100, s: "" }); newHJAttempt();
+    HJ.log.push({ h: nextH(), s: "" }); newHJAttempt();
   });
   $("raise").addEventListener("pointerdown", e => e.stopPropagation());
   function hjPress() {
@@ -1464,7 +1478,7 @@ li.fresh .r { color: #fff; }
   }
   function renderHjHud() {
     const s = hjEntry().s;
-    $("hudBestK").textContent = "BAR"; $("hudBest").textContent = HJ.bar.toFixed(2);
+    $("hudBestK").textContent = "BAR"; $("hudBest").textContent = fmtH(HJ.bar);
     for (let i = 0; i < 3; i++) {
       const p = $("p" + i), c = s[i];
       p.querySelector("b").textContent = "ATT " + (i + 1);
@@ -1540,7 +1554,7 @@ li.fresh .r { color: #fff; }
     ctx.textAlign = "center"; ctx.textBaseline = "bottom";
     ctx.font = Math.round(Math.max(14, ppm * .36)) + "px 'Lilita One', Impact, sans-serif";
     const lb = P3(0, 2.95, 1); ctx.lineWidth = 5; ctx.strokeStyle = "#1b2340"; ctx.fillStyle = "#ffcd2e";
-    if (state !== "hplant" && state !== "hflight" && state !== "hland") { ctx.strokeText(HJ.bar.toFixed(2) + " m", lb[0], lb[1]); ctx.fillText(HJ.bar.toFixed(2) + " m", lb[0], lb[1]); }
+    if (state !== "hplant" && state !== "hflight" && state !== "hland") { ctx.strokeText(fmtH(HJ.bar) + " m", lb[0], lb[1]); ctx.fillText(fmtH(HJ.bar) + " m", lb[0], lb[1]); }
     // particles
     parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .7; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), g0 - p.y * ppm, p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
     ctx.globalAlpha = 1;
