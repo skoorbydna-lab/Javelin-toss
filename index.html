@@ -199,7 +199,7 @@ li.fresh .r { color: #fff; }
       <h1 class="logo" id="mTitle">Tap<br><em>Athletics</em></h1>
       <p class="byline" id="byline">by Brooky</p>
       <div id="mIntro">
-        <p class="sub"><b>Olympics:</b> play all three events in a row and score points, decathlon style.</p>
+        <p class="sub"><b>Olympics:</b> play all four events in a row (100m, long jump, high jump, javelin) and score points, decathlon style.</p>
         <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
         <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
         <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
@@ -238,7 +238,7 @@ li.fresh .r { color: #fff; }
       <ol id="listHj" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.1</p>
+      <p class="ver">Version 3.2</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -299,7 +299,7 @@ li.fresh .r { color: #fff; }
   function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
   function renderHud() {
     $("olyTag").hidden = !OLY.active;
-    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 3: 100M" : mode === "longjump" ? "EVENT 2 OF 3: LONG JUMP" : "EVENT 3 OF 3: JAVELIN");
+    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 4: 100M" : mode === "longjump" ? "EVENT 2 OF 4: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 4: HIGH JUMP" : "EVENT 4 OF 4: JAVELIN");
     $("p3").hidden = mode !== "sprint";
     if (mode === "highjump") { renderHjHud(); return; }
     if (mode === "sprint") { renderSprintHud(); return; }
@@ -375,6 +375,7 @@ li.fresh .r { color: #fff; }
       set(1, "POINTS", String(OLY.total)); set(2, "YOUR BEST", String(OLY.pb)); set(3, "BOARD", "#" + OLY.rank);
       $("rSeries").textContent = "100m: " + (r.spr ? r.spr.toFixed(2) + " s" : "DQ") + "  →  " + p.spr + " pts\n" +
         "Long jump: " + (r.lj !== null ? r.lj.toFixed(2) + " m" : "no jump") + "  →  " + p.lj + " pts\n" +
+        "High jump: " + (r.hj !== null ? r.hj.toFixed(2) + " m" : "no height") + "  →  " + p.hj + " pts\n" +
         "Javelin: " + (r.jav !== null ? r.jav.toFixed(2) + " m" : "no throw") + "  →  " + p.jav + " pts";
     } else if (results && mode === "sprint") {
       set(1, "TIME", S.dq ? "DQ" : S.time.toFixed(2) + " s");
@@ -400,18 +401,19 @@ li.fresh .r { color: #fff; }
   const POINTS = {
     spr: t => t ? Math.floor(25.4347 * Math.pow(Math.max(0, 18 - t), 1.81)) : 0,
     lj: m => m ? Math.floor(0.14354 * Math.pow(Math.max(0, m * 100 - 220), 1.4)) : 0,
+    hj: h => h ? Math.floor(0.8465 * Math.pow(Math.max(0, h * 100 - 75), 1.42)) : 0,
     jav: m => m ? Math.floor(10.14 * Math.pow(Math.max(0, m - 7), 1.08)) : 0
   };
-  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, jav: null }; startSprint(); }
+  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, hj: null, jav: null }; startSprint(); }
   function olyFinish() {
     const r = OLY.res;
-    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), jav: POINTS.jav(r.jav) };
-    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.jav;
+    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), hj: POINTS.hj(r.hj), jav: POINTS.jav(r.jav) };
+    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.hj + OLY.pts.jav;
     OLY.rank = boardPos("oly", OLY.total);
     const sub = submit("oly", OLY.total); OLY.pb = sub.best;
     OLY.active = false; tab = "oly";
     showMenu("oly");
-    sfx.cheer(Math.min(1, OLY.total / 3300), sub.improved && OLY.rank === 1);
+    sfx.cheer(Math.min(1, OLY.total / 4400), sub.improved && OLY.rank === 1);
   }
 
   // ---------- records: one best score per player on each board (Firebase, with a this-device fallback)
@@ -1093,7 +1095,7 @@ li.fresh .r { color: #fff; }
       tab = OLY.active ? "oly" : "lj";
       if (OLY.active) OLY.res.lj = b;
     }
-    const next = last ? (OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS") : "TAP FOR NEXT JUMP";
+    const next = last ? (OLY.active ? "TAP FOR THE HIGH JUMP" : "TAP FOR RESULTS") : "TAP FOR NEXT JUMP";
     if (d === null) showToast("FOUL!", "Over the board", next, true);
     else {
       const q = d / MAXJ;
@@ -1111,7 +1113,7 @@ li.fresh .r { color: #fff; }
         setCue(false); setGo(""); setPrompt(""); jsay(reactWord(rt) + "  " + rt.toFixed(2));
       } else if (J.grace <= 0) ljTakeoff();
     }
-    else if (state === "llanded") { if (throws.length < 3) newJump(); else if (OLY.active) startGame(); else showMenu(true); }
+    else if (state === "llanded") { if (throws.length < 3) newJump(); else if (OLY.active) startHJ(); else showMenu(true); }
   }
   function ljUpdate(dt) {
     if (state === "lcount") { J.tc += dt; if (J.tc >= 2) ljStart(2); }
@@ -1399,8 +1401,9 @@ li.fresh .r { color: #fff; }
       setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (HJ.bar - 1.6) / .8)), rec), 150);
     } else if (hjFails() >= 3) {
       state = "hdone"; HJ.final = hjSummary();
-      lastPB = HJ.final ? submit("hj", HJ.final.code).best : personalBest("hj"); tab = "hj";
-      showToast("OUT!", HJ.final ? "Best " + HJ.final.h.toFixed(2) + " m" : "No height cleared", "TAP FOR RESULTS", true);
+      lastPB = HJ.final ? submit("hj", HJ.final.code).best : personalBest("hj"); tab = OLY.active ? "oly" : "hj";
+      if (OLY.active) OLY.res.hj = HJ.final ? HJ.final.h : null;
+      showToast("OUT!", HJ.final ? "Best " + HJ.final.h.toFixed(2) + " m" : "No height cleared", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
       sfx.groan();
     } else {
       state = "hresult";
@@ -1433,7 +1436,7 @@ li.fresh .r { color: #fff; }
     }
     else if (state === "hflight") { if (HJ.f.archT === null && !HJ.f.decided) { HJ.f.archT = HJ.f.t; sfx.tick(); } }
     else if (state === "hresult") { if ($("raise").hidden) newHJAttempt(); }
-    else if (state === "hdone") showMenu(true);
+    else if (state === "hdone") { if (OLY.active) startGame(); else showMenu(true); }
   }
   function hjUnpress() {
     if (HJ.holding) HJ.bt = (performance.now() - HJ.holdStart) / 1000;
@@ -1591,7 +1594,7 @@ li.fresh .r { color: #fff; }
       ctx.font = Math.round(Math.min(W, H) * .07) + "px 'Lilita One', Impact, sans-serif";
       ctx.fillStyle = /^(NO|TOO|WAY|MISSED|BALK)/.test(HJ.msg) ? "#ff4f5e" : "#ffcd2e";
       ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340";
-      const y = H * .33;
+      const y = H * .37;
       ctx.strokeText(HJ.msg, W / 2, y); ctx.fillText(HJ.msg, W / 2, y);
       ctx.globalAlpha = 1;
     }
