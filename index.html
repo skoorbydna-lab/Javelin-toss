@@ -78,6 +78,8 @@ canvas { display: block; width: 100%; height: 100%; }
 .toast .word.foul { color: var(--hot); }
 .toast .dist { font-family: var(--display); font-size: clamp(44px, 15vh, 104px); color: #fff; text-shadow: 0 5px 0 var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
 .toast .next { margin-top: 8px; font-weight: 900; letter-spacing: .1em; font-size: 14px; color: #fff; text-shadow: 0 2px 0 var(--ink); }
+.toast .stats2 { display: inline-block; margin-top: 8px; padding: 5px 12px; border-radius: 10px; background: rgba(27,35,64,.8); color: #fff; font-weight: 900; font-size: 13px; letter-spacing: .04em; max-width: 92vw; font-variant-numeric: tabular-nums; }
+.toast .stats2 b { color: var(--sun); }
 .toast.pop { animation: pop .45s cubic-bezier(.2, 1.6, .4, 1); }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
 
@@ -101,8 +103,8 @@ canvas { display: block; width: 100%; height: 100%; }
 .play { margin-top: 16px; width: 100%; font-family: var(--display); font-size: 30px; letter-spacing: .04em; color: var(--ink); background: var(--sun); border: 0; border-radius: 16px; padding: 10px; cursor: pointer; box-shadow: 0 6px 0 #c99700; }
 .play:active { transform: translateY(4px); box-shadow: 0 2px 0 #c99700; }
 .play:focus-visible, .name input:focus-visible, .ghost:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
-.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
-.tab { flex: 1; line-height: 1.05; font-family: var(--display); font-size: 14px; color: #9fb0e0; background: #222b52; border: 0; border-radius: 12px; padding: 7px 6px; cursor: pointer; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tab { flex: 1 1 28%; line-height: 1.05; font-family: var(--display); font-size: 14px; color: #9fb0e0; background: #222b52; border: 0; border-radius: 12px; padding: 7px 6px; cursor: pointer; }
 .tab.on { background: var(--teal); color: var(--ink); box-shadow: 0 3px 0 #1d8f85; }
 .src { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #9fb0e0; }
 .src.live::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-right: 6px; vertical-align: 1px; }
@@ -110,9 +112,19 @@ canvas { display: block; width: 100%; height: 100%; }
 .play.oly { grid-column: 1 / -1; background: linear-gradient(90deg, #2a64e0, #7c5cff 30%, #ff4f5e 55%, #ffcd2e 80%, #2ec4b6); color: #fff; text-shadow: 0 2px 0 rgba(27,35,64,.6); box-shadow: 0 6px 0 #0e1428; }
 .play.oly:active { box-shadow: 0 2px 0 #0e1428; }
 .olytag { position: absolute; left: 50%; top: max(70px, calc(env(safe-area-inset-top, 0px) + 64px)); transform: translateX(-50%); padding: 5px 14px; border-radius: 12px; background: rgba(27,35,64,.8); color: var(--sun); font-weight: 900; font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
-.events { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.events { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
 .events .play { margin-top: 0; font-size: clamp(16px, 4vh, 23px); padding: 10px 4px; line-height: 1.05; }
 .play.lj { background: var(--hot); color: #fff; box-shadow: 0 6px 0 #b8293a; }
+.play.hj { background: #7c5cff; color: #fff; box-shadow: 0 6px 0 #5a3fd1; }
+.play.hj:active { box-shadow: 0 2px 0 #5a3fd1; }
+.cb { font-family: var(--body); font-weight: 800; font-size: 11px; color: #9fb0e0; }
+.raise { position: absolute; left: 50%; bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px)); transform: translateX(-50%); pointer-events: auto; background: rgba(27,35,64,.9); border-radius: 18px; padding: 8px 12px 12px; text-align: center; }
+.raise p { margin: 0 0 6px; font-weight: 900; font-size: 12px; letter-spacing: .12em; color: var(--sun); }
+.rb { display: flex; gap: 8px; }
+.rb button { font-family: var(--display); font-size: 22px; color: var(--ink); background: var(--sun); border: 0; border-radius: 12px; padding: 6px 8px 4px; min-width: 56px; cursor: pointer; box-shadow: 0 4px 0 #c99700; display: grid; gap: 2px; line-height: 1; }
+.rb button:active { transform: translateY(3px); box-shadow: 0 1px 0 #c99700; }
+.rb button span { font-family: var(--body); font-weight: 800; font-size: 11px; }
+.rb button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
 .play.lj:active { box-shadow: 0 2px 0 #b8293a; }
 .play.alt { background: var(--teal); box-shadow: 0 6px 0 #1d8f85; }
 .play.alt:active { box-shadow: 0 2px 0 #1d8f85; }
@@ -163,7 +175,17 @@ li.fresh .r { color: #fff; }
       </div>
     </div>
     <div class="olytag" id="olyTag" hidden></div>
-    <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div></div>
+    <div class="raise" id="raise" hidden>
+      <p>RAISE THE BAR BY</p>
+      <div class="rb">
+        <button type="button" id="raise1">+1cm<span>—</span></button>
+        <button type="button" id="raise2">+2cm<span>—</span></button>
+        <button type="button" id="raise3">+3cm<span>—</span></button>
+        <button type="button" id="raise4">+4cm<span>—</span></button>
+        <button type="button" id="raise5">+5cm<span>—</span></button>
+      </div>
+    </div>
+    <div class="toast" id="toast" hidden><div class="word" id="tWord"></div><div class="dist" id="tDist"></div><div class="next" id="tNext"></div><div class="stats2" id="tStats" hidden></div></div>
     <div class="bottom">
       <div class="prompt" id="prompt"></div>
       <div class="btn-go" id="go">RUN</div>
@@ -180,6 +202,7 @@ li.fresh .r { color: #fff; }
         <p class="sub"><b>Olympics:</b> play all three events in a row and score points, decathlon style.</p>
         <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
         <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
+        <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
         <p class="sub"><b>Long jump:</b> hold for exactly one second, then let go to start. Tap fast when TAP! flashes, then press right at the board and hold while the arrow rises. Let go at the perfect angle.</p>
       </div>
       <div id="mResults" hidden>
@@ -196,6 +219,7 @@ li.fresh .r { color: #fff; }
         <button class="play oly" id="playOly" type="button">OLYMPICS</button>
         <button class="play alt" id="playSprint" type="button">100M</button>
         <button class="play lj" id="playLj" type="button">LONG JUMP</button>
+        <button class="play hj" id="playHj" type="button">HIGH JUMP</button>
         <button class="play" id="play" type="button">JAVELIN</button>
       </div>
     </div>
@@ -204,21 +228,24 @@ li.fresh .r { color: #fff; }
         <button class="tab on" id="tabOly" type="button" role="tab" aria-selected="true">Olympics</button>
         <button class="tab" id="tabSpr" type="button" role="tab" aria-selected="false">100m</button>
         <button class="tab" id="tabLj" type="button" role="tab" aria-selected="false">Long jump</button>
+        <button class="tab" id="tabHj" type="button" role="tab" aria-selected="false">High jump</button>
         <button class="tab" id="tabThrow" type="button" role="tab" aria-selected="false">Javelin</button>
       </div>
       <p class="src" id="src">Scores on this device</p>
       <ol id="listOly"></ol>
       <ol id="listSpr" hidden></ol>
       <ol id="listLj" hidden></ol>
+      <ol id="listHj" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 2.9</p>
+      <p class="ver">Version 3.1</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
           <button class="ghost" id="resetOly" type="button">Reset Olympics</button>
           <button class="ghost" id="resetSpr" type="button">Reset 100m</button>
           <button class="ghost" id="resetLj" type="button">Reset long jump</button>
+          <button class="ghost" id="resetHj" type="button">Reset high jump</button>
           <button class="ghost" id="resetThrow" type="button">Reset javelin</button>
         </span>
         <p class="adminMsg" id="adminMsg" hidden></p>
@@ -263,7 +290,7 @@ li.fresh .r { color: #fff; }
   function setGo(t) { $("go").textContent = t; $("go").hidden = !t; }
   let toastAt = -9;
   function showToast(word, dist, next, foul) {
-    const el = $("toast"); el.hidden = false; toastAt = time;
+    const el = $("toast"); el.hidden = false; toastAt = time; $("tStats").hidden = true;
     $("tWord").textContent = word; $("tWord").classList.toggle("foul", !!foul);
     $("tDist").textContent = dist; $("tNext").textContent = next;
     el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
@@ -274,6 +301,7 @@ li.fresh .r { color: #fff; }
     $("olyTag").hidden = !OLY.active;
     if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 3: 100M" : mode === "longjump" ? "EVENT 2 OF 3: LONG JUMP" : "EVENT 3 OF 3: JAVELIN");
     $("p3").hidden = mode !== "sprint";
+    if (mode === "highjump") { renderHjHud(); return; }
     if (mode === "sprint") { renderSprintHud(); return; }
     $("hudBestK").textContent = "BEST";
     for (let i = 0; i < 3; i++) $("p" + i).querySelector("b").textContent = (mode === "longjump" ? "JUMP " : "THROW ") + (i + 1);
@@ -353,6 +381,12 @@ li.fresh .r { color: #fff; }
       set(2, "PLACE", S.dq ? "—" : ["1st", "2nd", "3rd", "4th"][S.place - 1]);
       set(3, "YOUR BEST", lastPB === null ? "—" : lastPB.toFixed(2) + " s");
       $("rSeries").textContent = S.dq ? "False start: disqualified" : "Reactions: " + S.rts.map(r => r === null ? "miss" : r.toFixed(2)).join("  ·  ");
+    } else if (results && mode === "highjump") {
+      const F = HJ.final;
+      set(1, "CLEARED", F ? F.h.toFixed(2) + " m" : "NM");
+      set(2, "MISSES", F ? String(F.tot) : "—");
+      set(3, "YOUR BEST", lastPB === null ? "—" : hjDecode(lastPB).h.toFixed(2) + " m");
+      $("rSeries").textContent = HJ.log.map(e => e.h.toFixed(2) + " " + (e.s || "–")).join("  ·  ");
     } else if (results) {
       set(1, "BEST", m(best())); set(2, "AVERAGE", m(avg())); set(3, "YOUR BEST", m(lastPB));
       $("rSeries").textContent = throws.map(t => t === null ? "Foul" : t.toFixed(2)).join("  ·  ") + "   (fouls count as 0)";
@@ -381,7 +415,7 @@ li.fresh .r { color: #fff; }
   }
 
   // ---------- records: one best score per player on each board (Firebase, with a this-device fallback)
-  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics";
+  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics", KEY_HJ = KEY + "-highjump";
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
     authDomain: "javelin-toss-fe81d.firebaseapp.com",
@@ -394,10 +428,11 @@ li.fresh .r { color: #fff; }
     oly: { key: KEY_OLY, coll: "olympics", asc: false, list: "listOly", tabEl: "tabOly", reset: "resetOly", label: "Olympics", fmt: d => String(Math.round(d)), empty: "Play Olympics mode to post a points total." },
     spr: { key: KEY_SPR, coll: "sprints", asc: true, list: "listSpr", tabEl: "tabSpr", reset: "resetSpr", label: "100m", fmt: d => d.toFixed(2), empty: "No races yet. Be the first!" },
     lj: { key: KEY_LJ, coll: "longjumps", asc: false, list: "listLj", tabEl: "tabLj", reset: "resetLj", label: "long jump", fmt: d => d.toFixed(2), empty: "No jumps yet. Be the first!" },
+    hj: { key: KEY_HJ, coll: "highjumps", asc: false, list: "listHj", tabEl: "tabHj", reset: "resetHj", label: "high jump", fmt: hjFmt, empty: "No heights cleared yet. Be the first!" },
     jav: { key: KEY, coll: "throws", asc: false, list: "list", tabEl: "tabThrow", reset: "resetThrow", label: "javelin", fmt: d => d.toFixed(2), empty: "No throws yet. Be the first!" }
   };
   let anyOk = false, tab = "oly", fdb = null, online = false, netErr = "", lastPB = null;
-  const remote = { oly: [], spr: [], lj: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, jav: null };
+  const remote = { oly: [], spr: [], lj: [], hj: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, hj: null, jav: null };
   const atLeast = (b, a, c) => BOARDS[b].asc ? a <= c : a >= c;
   const beats = (b, a, c) => BOARDS[b].asc ? a < c : a > c;
 
@@ -513,7 +548,7 @@ li.fresh .r { color: #fff; }
   setupAdmin();
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
-  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
+  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
     $(id).addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); OLY.active = false; go(); });
   });
 
@@ -635,6 +670,15 @@ li.fresh .r { color: #fff; }
         noise(t, 0.25, "lowpass", 400, 0.7, 0.8, 0.001);
         tone(t, 0.25, "sine", 120, 40, 0.8);
       },
+      clang() {
+        if (!ok()) return; const t = ac.currentTime;
+        tone(t, .5, "triangle", 1250, 1180, .18); tone(t, .35, "square", 620, 560, .07); tone(t + .04, .4, "triangle", 1870, 1800, .08);
+        noise(t, .1, "highpass", 3000, .7, .22, .002);
+      },
+      mat() {
+        if (!ok()) return; const t = ac.currentTime;
+        noise(t, .35, "lowpass", 350, .7, .6, .01); tone(t, .25, "sine", 90, 45, .4);
+      },
       tick() {
         if (!ok()) return; const t = ac.currentTime;
         tone(t, 0.05, "square", 1800, 1800, 0.12);
@@ -667,11 +711,12 @@ li.fresh .r { color: #fff; }
     if (!$("toast").hidden && time - toastAt < 0.6) return; // don't skip a result by accident
     if (mode === "sprint") { sprintPress(); return; }
     if (mode === "longjump") { ljPress(); return; }
+    if (mode === "highjump") { hjPress(); return; }
     if (state === "ready") startRun();
     else if (state === "running") startCharge();
     else if (state === "landed") { if (throws.length < 3) newThrow(); else if (OLY.active) olyFinish(); else showMenu(true); }
   }
-  function unpress() { if (mode === "javelin" && state === "charging") release(); else if (mode === "longjump" && state === "laim") ljLock(); else if (mode === "longjump" && state === "lcount") ljStart(J.tc); }
+  function unpress() { if (mode === "javelin" && state === "charging") release(); else if (mode === "longjump" && state === "laim") ljLock(); else if (mode === "longjump" && state === "lcount") ljStart(J.tc); else if (mode === "highjump") hjUnpress(); }
   stage.addEventListener("pointerdown", e => { if (e.button > 0) return; e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {} press(); });
   stage.addEventListener("pointerup", e => { e.preventDefault(); unpress(); });
   stage.addEventListener("pointercancel", unpress);
@@ -690,6 +735,7 @@ li.fresh .r { color: #fff; }
     time += dt;
     if (mode === "sprint") { sprintUpdate(dt); return; }
     if (mode === "longjump") { ljUpdate(dt); return; }
+    if (mode === "highjump") { hjUpdate(dt); return; }
     if (state === "running" || state === "charging") {
       aSpeed += ACC * dt; ax += aSpeed * dt;
       const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
@@ -987,7 +1033,7 @@ li.fresh .r { color: #fff; }
       ctx.font = Math.round(Math.min(W, H) * .075) + "px 'Lilita One', Impact, sans-serif";
       ctx.fillStyle = S.msg.startsWith("MISS") || S.msg.startsWith("STUM") ? "#ff4f5e" : "#ffcd2e";
       ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340";
-      const y = H * .2 - (1.3 - S.msgT) * 20;
+      const y = H * .36 - (1.3 - S.msgT) * 10;
       ctx.strokeText(S.msg, W / 2, y); ctx.fillText(S.msg, W / 2, y);
       ctx.globalAlpha = 1;
     }
@@ -1228,8 +1274,325 @@ li.fresh .r { color: #fff; }
       ctx.font = Math.round(Math.min(W, H) * .075) + "px 'Lilita One', Impact, sans-serif";
       ctx.fillStyle = J.msg.startsWith("MISS") || J.msg.startsWith("POOR") ? "#ff4f5e" : "#ffcd2e";
       ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340";
-      const y = H * .2 - (1.3 - J.msgT) * 20;
+      const y = H * .36 - (1.3 - J.msgT) * 10;
       ctx.strokeText(J.msg, W / 2, y); ctx.fillText(J.msg, W / 2, y);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ---------- high jump
+  // Run-up: 4 steps, each a hold-and-release on a filling bar. Take-off: hold-and-release on a vertical power bar.
+  // Then tap when the shrinking ring meets the target at the top of the leap to arch over the bar.
+  // Score = run-up, take-off power and arch timing in equal thirds; height reached = 1.30 m + 1.15 m x score (2.45 m when perfect).
+  // No arch tap, or one outside the timing window, knocks the bar off.
+  const HJ_X0 = -1.0, HJ_STRIDE = 1.6, MAT_TOP = 0.65, STEP_TR = .8, LEAP_TR = 1.0, DROP = .25;
+  const hjHeight = (R, Pq, A) => 1.3 + 1.15 * (R + Pq + A) / 3;
+  const HJP = {
+    STAND: { hip: [0, .95], sh: [.05, 1.47], head: [.08, 1.7], kA: [.04, .5], fA: [.02, 0], kB: [-.04, .5], fB: [-.06, 0], hA: [-.08, 1.0], hB: [.12, 1.0] },
+    S0: { hip: [0, .92], sh: [.12, 1.42], head: [.18, 1.64], kA: [.18, .55], fA: [.12, .1], kB: [-.1, .48], fB: [-.3, .02], hA: [-.2, 1.05], hB: [.28, 1.15] },
+    S1: { hip: [0, 1.02], sh: [.14, 1.52], head: [.2, 1.74], kA: [.44, .82], fA: [.48, .37], kB: [-.32, .64], fB: [-.64, .42], hA: [-.3, 1.17], hB: [.4, 1.32] },
+    S2: { hip: [0, .92], sh: [.12, 1.42], head: [.18, 1.64], kA: [.08, .5], fA: [.05, .02], kB: [-.12, .55], fB: [-.32, .25], hA: [.22, 1.12], hB: [-.24, 1.05] },
+    PLANT: { hip: [0, .85], sh: [-.12, 1.33], head: [-.16, 1.56], kA: [.18, .48], fA: [.36, .02], kB: [-.2, .45], fB: [-.45, .08], hA: [-.38, .95], hB: [-.32, 1.0] },
+    TAKEOFF: { hip: [0, .95], sh: [-.02, 1.47], head: [-.03, 1.7], kA: [.28, 1.12], fA: [.2, .68], kB: [-.04, .5], fB: [-.08, .04], hA: [.08, 1.98], hB: [-.06, 1.92] },
+    TURN: { hip: [0, .95], sh: [.06, 1.46], head: [.09, 1.69], kA: [.1, .52], fA: [-.06, .12], kB: [.04, .5], fB: [-.1, .08], hA: [.16, 1.9], hB: [.06, 1.86] },
+    ARCH: { hip: [0, .95], sh: [.42, .82], head: [.62, .72], kA: [-.38, .78], fA: [-.48, .42], kB: [-.34, .74], fB: [-.44, .4], hA: [.55, .5], hB: [.48, .52] },
+    KICK: { hip: [0, .95], sh: [.38, .66], head: [.52, .52], kA: [-.1, 1.3], fA: [.25, 1.55], kB: [-.14, 1.26], fB: [.2, 1.5], hA: [.5, .35], hB: [.42, .38] },
+    LAND: { hip: [0, .95], sh: [.5, .98], head: [.72, 1.0], kA: [.05, 1.4], fA: [.35, 1.6], kB: [0, 1.36], fB: [.3, 1.55], hA: [.55, 1.35], hB: [.45, 1.3] }
+  };
+  const swapLegs = p => ({ hip: p.hip, sh: p.sh, head: p.head, kA: p.kB, fA: p.fB, kB: p.kA, fB: p.fA, hA: p.hB, hB: p.hA });
+  const strideFrames = (lead, final) => final ? [HJP.S0, HJP.S1, HJP.PLANT] : lead ? [swapLegs(HJP.S0), swapLegs(HJP.S1), swapLegs(HJP.S2)] : [HJP.S0, HJP.S1, HJP.S2];
+  function mixPose(a, b, k) {
+    k = Math.max(0, Math.min(1, k)); k = k * k * (3 - 2 * k);
+    const o = {}; for (const j in a) o[j] = [a[j][0] + (b[j][0] - a[j][0]) * k, a[j][1] + (b[j][1] - a[j][1]) * k];
+    return o;
+  }
+  // a filling bar: speeds up sharply to 100%, then drops quickly back to 0 and starts again; it counts on the way up and down
+  function barAt(tau, tr) {
+    const cyc = tr + DROP; tau = tau % cyc;
+    return tau < tr ? { v: Math.pow(tau / tr, 3.5), over: false } : { v: Math.max(0, 1 - Math.pow((tau - tr) / DROP, .8)), over: true };
+  }
+  const HJ = { log: [], bar: 1.7, f: null };
+  const xCount = s => (s.match(/X/g) || []).length;
+  function hjEntry() { return HJ.log[HJ.log.length - 1]; }
+  function hjFails() { return xCount(hjEntry().s); }
+  function hjDecode(c) { return { h: Math.floor(c / 1000) / 100, fAtH: 2 - Math.floor((c % 1000) / 100), tot: 99 - (c % 100) }; }
+  function hjFmt(c) { const r = hjDecode(c); return r.h.toFixed(2) + (r.fAtH || r.tot ? ' <small class="cb">' + r.fAtH + '/' + r.tot + '</small>' : ""); }
+  function hjSummary() { // official countback: fewest misses at the last height cleared, then fewest misses in total up to it
+    let last = -1; HJ.log.forEach((e, i) => { if (e.s.endsWith("O")) last = i; });
+    if (last < 0) return null;
+    const fAtH = xCount(HJ.log[last].s); let tot = 0;
+    for (let i = 0; i <= last; i++) tot += xCount(HJ.log[i].s);
+    const h = HJ.log[last].h;
+    return { h, fAtH, tot, code: Math.round(h * 100) * 1000 + (2 - fAtH) * 100 + (99 - Math.min(99, tot)) };
+  }
+  function startHJ() { mode = "highjump"; freshName.hj = null; $("menu").hidden = true; HJ.log = [{ h: 1.70, s: "" }]; HJ.final = null; newHJAttempt(); }
+  function newHJAttempt() {
+    HJ.bar = hjEntry().h;
+    Object.assign(HJ, { x: HJ_X0 - 5 * HJ_STRIDE, st: null, rest: HJP.STAND, steps: 0, qs: [], holding: false, bt: 0, idle: 0, f: null, hipY: .95, landT: 0, lastPose: null, barFall: null, msg: "", msgT: 0, lastClear: false, shown: null });
+    parts = []; aSpeed = 0; shake = 0;
+    state = "hready"; $("toast").hidden = true; $("raise").hidden = true; $("go").classList.remove("held");
+    setPrompt("STEP 1 OF 4: HOLD, LET GO AT 100%", true); setGo("HOLD"); renderHud();
+    hjCamera(1, true);
+  }
+  function hsay(t) { HJ.msg = t; HJ.msgT = 1.3; }
+  function pctWord(v) { // more decimal places the closer you get to 100%
+    const p = v * 100, txt = v >= .995 ? p.toFixed(2) : v >= .95 ? p.toFixed(1) : String(Math.round(p));
+    return (v >= .995 ? "PERFECT " : "") + txt + "%";
+  }
+  function hjStride(x1, dur, final) {
+    const lead = HJ.steps % 2;
+    HJ.st = { x0: HJ.x, x1, t: 0, dur, lead, final: !!final }; sfx.step(6);
+  }
+  function hjStepRelease() {
+    const b = barAt(HJ.bt, STEP_TR), q = b.v;
+    HJ.holding = false; HJ.qs.push(q); HJ.shown = { v: b.v, t: .5, horiz: true };
+    hsay("STEP " + (HJ.steps + 1) + ": " + pctWord(b.v));
+    hjStride(HJ_X0 - (4 - HJ.steps) * HJ_STRIDE, .5);
+    HJ.steps++; HJ.idle = 0; $("go").classList.remove("held");
+    setPrompt(HJ.steps < 4 ? "STEP " + (HJ.steps + 1) + " OF 4: HOLD, LET GO AT 100%" : "TAKE-OFF: HOLD, LET GO AT 100%");
+  }
+  function hjTakeoff() { // release on the 5th beat: one more long stride into the take-off
+    $("go").classList.remove("held"); HJ.holding = false;
+    const b = barAt(HJ.bt, LEAP_TR);
+    HJ.P = b.v; hsay("TAKE-OFF " + pctWord(b.v));
+    hjStride(HJ_X0, .5, true); state = "hplant"; setGo(""); setPrompt("");
+  }
+  function hjLaunch() {
+    const P = HJ.P, Pq = Math.pow(P, 3), R = HJ.qs.reduce((s, q) => s + q * q, 0) / 4;
+    const E0 = hjHeight(R, Pq, 1), T = 1.05 + .35 * Math.max(0, E0 - 1.5) / .95;
+    HJ.x = HJ_X0;
+    HJ.f = { t: 0, T, tA: .42 * T, E0, Pq, R, P, archT: null, decided: false, cleared: false, peak: E0 + .05 };
+    state = "hflight"; setPrompt("TAP WHEN THE CIRCLE TURNS SOLID GREEN!"); sfx.grunt();
+  }
+  function hjDecide() {
+    const f = HJ.f; f.decided = true;
+    const A = f.archT === null ? 0 : Math.max(0, 1 - Math.abs(f.archT - f.tA) / .3);
+    const E = hjHeight(f.R, f.Pq, A);
+    f.A = A; f.cleared = A > 0 && E >= HJ.bar - 1e-9; // a missed arch tap always knocks the bar off
+    hsay(f.archT === null ? "MISSED THE TAP!" : A === 0 ? (f.archT < f.tA ? "WAY TOO EARLY!" : "WAY TOO LATE!") : A > .85 ? "PERFECT TIMING!" : A > .55 ? "GOOD TIMING" : f.archT < f.tA ? "TOO EARLY" : "TOO LATE");
+    if (!f.cleared) { HJ.barFall = { t: 0, hit: false }; sfx.clang(); shake = .15; }
+    setPrompt("");
+  }
+  function hjPath(f, u) {
+    const a = .42, y0 = .95, yL = MAT_TOP + .14;
+    return u < a ? y0 + (f.peak - y0) * Math.sin(Math.PI / 2 * u / a) : f.peak - (f.peak - yL) * (1 - Math.cos(Math.PI / 2 * (u - a) / (1 - a)));
+  }
+  function hjPose(f) {
+    if (f.t < .25 * f.T) return mixPose(HJP.TAKEOFF, HJP.TURN, f.t / (.25 * f.T));
+    if (f.archT === null) return HJP.TURN;
+    const tgt = HJ.x > .3 ? mixPose(HJP.ARCH, HJP.KICK, (HJ.x - .3) / .6) : HJP.ARCH;
+    return mixPose(HJP.TURN, tgt, (f.t - f.archT) / .15);
+  }
+  function hjRunPose() {
+    if (!HJ.st) return HJ.rest;
+    const fr = strideFrames(HJ.st.lead, HJ.st.final), k = Math.min(1, HJ.st.t / HJ.st.dur);
+    return k < .5 ? mixPose(fr[0], fr[1], k * 2) : mixPose(fr[1], fr[2], (k - .5) * 2);
+  }
+  function hjResult(cleared, word) {
+    const e = hjEntry(); e.s += cleared ? "O" : "X"; HJ.lastClear = cleared; HJ.holding = false;
+    setPrompt(""); setGo(""); $("go").classList.remove("held");
+    if (cleared) {
+      state = "hresult";
+      const sum = hjSummary(), rec = !!sum && rankOf("hj", sum.code) === 0;
+      showToast(rec ? "NEW RECORD!" : "CLEARED!", HJ.bar.toFixed(2) + " m", "CHOOSE HOW MUCH TO RAISE THE BAR");
+      showRaise();
+      setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (HJ.bar - 1.6) / .8)), rec), 150);
+    } else if (hjFails() >= 3) {
+      state = "hdone"; HJ.final = hjSummary();
+      lastPB = HJ.final ? submit("hj", HJ.final.code).best : personalBest("hj"); tab = "hj";
+      showToast("OUT!", HJ.final ? "Best " + HJ.final.h.toFixed(2) + " m" : "No height cleared", "TAP FOR RESULTS", true);
+      sfx.groan();
+    } else {
+      state = "hresult";
+      showToast(word, HJ.bar.toFixed(2) + " m", "TAP FOR ATTEMPT " + (hjFails() + 1), true);
+      sfx.groan();
+    }
+    const f = HJ.f;
+    if (f && f.decided) { // stage summary: the scores that count towards height, each a third
+      const pc = v => (v * 100).toFixed(1) + "%";
+      $("tStats").innerHTML = "RUN-UP " + pc(f.R) + "  ·  TAKE-OFF " + pc(f.Pq) + "  ·  ARCH " + pc(f.A) + "  ·  <b>AVERAGE " + pc((f.R + f.Pq + f.A) / 3) + "</b>";
+      $("tStats").hidden = false;
+    }
+    renderHud();
+  }
+  function showRaise() {
+    $("raise").hidden = false;
+    for (let i = 1; i <= 5; i++) $("raise" + i).querySelector("span").textContent = (HJ.bar + i / 100).toFixed(2);
+  }
+  for (let i = 1; i <= 5; i++) $("raise" + i).addEventListener("click", () => {
+    if (state !== "hresult" || $("raise").hidden) return;
+    HJ.log.push({ h: Math.round((HJ.bar + i / 100) * 100) / 100, s: "" }); newHJAttempt();
+  });
+  $("raise").addEventListener("pointerdown", e => e.stopPropagation());
+  function hjPress() {
+    if (state === "hready") state = "hsteps";
+    if (state === "hsteps") {
+      if (HJ.holding) return;
+      HJ.holding = true; HJ.bt = 0; HJ.holdStart = performance.now(); $("go").classList.add("held");
+      if (HJ.steps === 4) { state = "hpower"; setPrompt("TAKE-OFF: LET GO AT 100%!"); } // 5th beat builds take-off power
+    }
+    else if (state === "hflight") { if (HJ.f.archT === null && !HJ.f.decided) { HJ.f.archT = HJ.f.t; sfx.tick(); } }
+    else if (state === "hresult") { if ($("raise").hidden) newHJAttempt(); }
+    else if (state === "hdone") showMenu(true);
+  }
+  function hjUnpress() {
+    if (HJ.holding) HJ.bt = (performance.now() - HJ.holdStart) / 1000;
+    if (state === "hsteps" && HJ.holding) hjStepRelease();
+    else if (state === "hpower") hjTakeoff();
+  }
+  function hjCamera(dt, snap) {
+    const g0 = H * .76 + H * .24 * .42;
+    ppm = Math.min((g0 - 95) / 3.3, W / 10);
+    const flying = HJ.f !== null;
+    const tx = flying ? .4 : Math.min(.4, HJ.x + 2.2);
+    camX = snap ? tx : camX + (tx - camX) * (1 - Math.exp(-dt * 4));
+  }
+  function hjUpdate(dt) {
+    if (HJ.st) {
+      const s = HJ.st; s.t += dt; const k = Math.min(1, s.t / s.dur), e = k * k * (3 - 2 * k);
+      HJ.x = s.x0 + (s.x1 - s.x0) * e;
+      if (k >= 1) { HJ.rest = strideFrames(s.lead, s.final)[2]; HJ.st = null; }
+    }
+    if (state === "hplant" && !HJ.st) hjLaunch();
+    if (HJ.holding) HJ.bt = (performance.now() - HJ.holdStart) / 1000;
+    if (state === "hsteps" && !HJ.holding && HJ.steps > 0) {
+      HJ.idle += dt;
+      if (HJ.idle > 2.5) { if (HJ.steps < 4) { HJ.bt = STEP_TR + DROP / 2; hjStepRelease(); hsay("TOO SLOW!"); } else hjResult(false, "BALK!"); }
+    }
+    if (HJ.shown) { HJ.shown.t -= dt; if (HJ.shown.t <= 0) HJ.shown = null; }
+    if (state === "hflight") {
+      const f = HJ.f; f.t += dt; const u = Math.min(1, f.t / f.T);
+      HJ.x = HJ_X0 + 2.6 * u; HJ.hipY = hjPath(f, u);
+      if (!f.decided && ((f.archT !== null && f.t >= f.tA) || f.t >= f.tA + .3)) hjDecide();
+      if (u >= 1) { HJ.lastPose = hjPose(f); state = "hland"; HJ.landT = 0; sfx.mat(); puff(HJ.x + .3, MAT_TOP, 8, 3, "#cfe0ff"); }
+    } else if (state === "hland") {
+      HJ.landT += dt; if (HJ.landT > .6) hjResult(HJ.f.cleared, "KNOCKED OFF!");
+    }
+    if (HJ.barFall) { const b = HJ.barFall; b.t += dt; if (!b.hit && HJ.bar - 4.9 * b.t * b.t <= MAT_TOP + .04) { b.hit = true; sfx.clang(); } }
+    HJ.msgT = Math.max(0, HJ.msgT - dt);
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= 4 * dt; p.life -= dt * 1.6; });
+    parts = parts.filter(p => p.life > 0);
+    shake = Math.max(0, shake - dt);
+    hjCamera(dt, false);
+  }
+  function renderHjHud() {
+    const s = hjEntry().s;
+    $("hudBestK").textContent = "BAR"; $("hudBest").textContent = HJ.bar.toFixed(2);
+    for (let i = 0; i < 3; i++) {
+      const p = $("p" + i), c = s[i];
+      p.querySelector("b").textContent = "ATT " + (i + 1);
+      p.querySelector("span").textContent = c || "—";
+      p.classList.toggle("foul", c === "X");
+      p.classList.toggle("now", i === s.length && state !== "menu" && !s.endsWith("O"));
+    }
+  }
+  function drawMeter(x, y, w, h, v, over, horiz) {
+    ctx.fillStyle = "rgba(27,35,64,.85)"; ctx.fillRect(x - 4, y - 4, w + 8, h + 8);
+    const gr = horiz ? ctx.createLinearGradient(x, 0, x + w, 0) : ctx.createLinearGradient(0, y + h, 0, y);
+    gr.addColorStop(0, "#2ec4b6"); gr.addColorStop(.6, "#ffcd2e"); gr.addColorStop(1, "#ff4f5e");
+    ctx.fillStyle = gr;
+    if (horiz) ctx.fillRect(x, y, w * v, h); else ctx.fillRect(x, y + h * (1 - v), w, h * v);
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    [.25, .5, .75].forEach(q => horiz ? ctx.fillRect(x + w * q - 1, y, 2, h) : ctx.fillRect(x, y + h * (1 - q) - 1, w, 2));
+    ctx.font = "900 12px Nunito, sans-serif"; ctx.fillStyle = "#fff";
+    if (horiz) {
+      ctx.textBaseline = "middle"; ctx.textAlign = "right"; ctx.fillText("0%", x - 8, y + h / 2);
+      ctx.textAlign = "left"; ctx.fillText("100%", x + w + 8, y + h / 2);
+    } else {
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText("100%", x + w / 2, y - 6);
+      ctx.textBaseline = "top"; ctx.fillText("0%", x + w / 2, y + h + 6);
+    }
+  }
+  function drawHJ(sx, gy) {
+    const band = H - gy, g0 = gy + band * .42, dz = band * .3;
+    const P3 = (x, h, d) => [sx(x + d * .35), g0 + d * dz - h * ppm];
+    const poly = (pts, col) => { ctx.fillStyle = col; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.closePath(); ctx.fill(); };
+    // apron
+    ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, band + 20);
+    ctx.fillStyle = "#d9523a"; ctx.fillRect(-20, gy + band * .06, W + 40, band);
+    ctx.fillStyle = "rgba(0,0,0,.06)";
+    const vx0 = camX - W / 2 / ppm - 2, vx1 = camX + W / 2 / ppm + 2;
+    for (let x = Math.floor(vx0); x < vx1; x++) if (((x % 2) + 2) % 2 === 0) ctx.fillRect(sx(x), gy + band * .06, ppm * .5, band);
+    // landing mat
+    const m0 = -.15, m1 = 4.2, md = .85;
+    poly([P3(m0, MAT_TOP, -md), P3(m0, MAT_TOP, md), P3(m0, 0, md), P3(m0, 0, -md)], "#1d4796");
+    poly([P3(m0, MAT_TOP, -md), P3(m1, MAT_TOP, -md), P3(m1, MAT_TOP, md), P3(m0, MAT_TOP, md)], "#3a7be0");
+    poly([P3(m0, MAT_TOP, md), P3(m1, MAT_TOP, md), P3(m1, 0, md), P3(m0, 0, md)], "#2457b8");
+    ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(...P3(m0, MAT_TOP, md)); ctx.lineTo(...P3(m1, MAT_TOP, md)); ctx.stroke();
+    // uprights and bar (seen at a slight angle so the bar runs across the jumper's path)
+    const post = d => {
+      const a = P3(0, 0, d), b = P3(0, 2.9, d), w = Math.max(5, ppm * .1);
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(a[0] - w / 2 - 2, b[1] - 2, w + 4, a[1] - b[1] + 2);
+      ctx.fillStyle = "#e9eef7"; ctx.fillRect(a[0] - w / 2, b[1], w, a[1] - b[1]);
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(a[0] - w, a[1] - 4, w * 2, 6);
+    };
+    post(-1);
+    const bw = Math.max(5, ppm * .09);
+    const barLine = (p, q) => {
+      ctx.lineCap = "round"; ctx.lineWidth = bw + 3; ctx.strokeStyle = "#1b2340"; ctx.beginPath(); ctx.moveTo(...p); ctx.lineTo(...q); ctx.stroke();
+      ctx.lineWidth = bw; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.moveTo(...p); ctx.lineTo(...q); ctx.stroke();
+      ctx.setLineDash([bw * 2, bw * 2]); ctx.strokeStyle = "#ffcd2e"; ctx.beginPath(); ctx.moveTo(...p); ctx.lineTo(...q); ctx.stroke(); ctx.setLineDash([]);
+    };
+    if (!HJ.barFall) barLine(P3(0, HJ.bar, -.95), P3(0, HJ.bar, .95));
+    else {
+      const b = HJ.barFall, hc = Math.max(MAT_TOP + .04, HJ.bar - 4.9 * b.t * b.t), xc = Math.min(.9, .8 * b.t), tilt = b.hit ? 0 : Math.min(.3, b.t * 1.2);
+      barLine(P3(xc, hc + tilt, -.95), P3(xc + (b.hit ? .15 : 0), Math.max(MAT_TOP + .04, hc - tilt), .95));
+    }
+    // jumper
+    const f = HJ.f;
+    if (!f) {
+      drawFig(sx(HJ.x), g0, g0, hjRunPose());
+    } else if (state === "hflight") {
+      drawFig(sx(HJ.x), g0 - (HJ.hipY - .95) * ppm, g0, hjPose(f));
+    } else {
+      drawFig(sx(HJ.x), g0 - (MAT_TOP + .14 - .95) * ppm, g0 - MAT_TOP * ppm, mixPose(HJ.lastPose, HJP.LAND, HJ.landT / .3));
+    }
+    post(1);
+    // height board on the near upright
+    ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    ctx.font = Math.round(Math.max(14, ppm * .36)) + "px 'Lilita One', Impact, sans-serif";
+    const lb = P3(0, 2.95, 1); ctx.lineWidth = 5; ctx.strokeStyle = "#1b2340"; ctx.fillStyle = "#ffcd2e";
+    if (state !== "hplant" && state !== "hflight" && state !== "hland") { ctx.strokeText(HJ.bar.toFixed(2) + " m", lb[0], lb[1]); ctx.fillText(HJ.bar.toFixed(2) + " m", lb[0], lb[1]); }
+    // particles
+    parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .7; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), g0 - p.y * ppm, p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    // run-up step bar (horizontal, over the jumper's head)
+    const stepBar = (v, over) => { const w = 2.4 * ppm, h = Math.max(14, ppm * .22); drawMeter(sx(HJ.x) - w / 2, g0 - 2.25 * ppm - h, w, h, v, over, true); };
+    if (state === "hsteps" && HJ.holding) { const b = barAt(HJ.bt, STEP_TR); stepBar(b.v, b.over); }
+    else if (HJ.shown && HJ.shown.horiz && state === "hsteps") stepBar(HJ.shown.v, false);
+    // take-off power bar (vertical)
+    if (state === "hpower" || state === "hplant") {
+      const b = state === "hpower" ? barAt(HJ.bt, LEAP_TR) : { v: HJ.P, over: false };
+      const w = Math.max(16, ppm * .28), h = 2.2 * ppm;
+      drawMeter(sx(state === "hpower" ? HJ.x : -2.6) - 1.0 * ppm - w, g0 - .2 * ppm - h, w, h, b.v, false, false);
+    }
+    // arch timing circle: a big open red ring shrinks, turning amber then green, and closes into a small solid
+    // green dot at the top of the leap. Tap at that moment. After that it turns red and fades.
+    if (state === "hflight" && f.archT === null && f.t < f.tA + .3) {
+      const cx = sx(HJ.x), cy = g0 - HJ.hipY * ppm, rBig = 2.0 * ppm, rSmall = .2 * ppm;
+      const k = Math.min(1, f.t / f.tA), late = Math.max(0, f.t - f.tA) / .3;
+      const r = rBig + (rSmall - rBig) * Math.pow(k, 1.3);
+      const hue = late > 0 ? 120 * (1 - Math.min(1, late * 2.5)) : 120 * Math.pow(k, 2.2); // red -> amber -> green, then back to red
+      const col = a => "hsla(" + hue.toFixed(0) + ",85%,52%," + a + ")";
+      const solid = late > 0 ? 1 : Math.max(0, Math.min(1, (k - .7) / .3));
+      ctx.globalAlpha = 1 - late;
+      if (solid > 0) { ctx.fillStyle = col((solid * .95).toFixed(2)); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill(); }
+      ctx.lineWidth = Math.max(3, 6 - 3 * k); ctx.strokeStyle = col(1);
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(27,35,64,.6)";
+      ctx.beginPath(); ctx.arc(cx, cy, r + ctx.lineWidth * 1.5, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    // messages
+    if (HJ.msgT > 0) {
+      ctx.globalAlpha = Math.min(1, HJ.msgT * 2);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = Math.round(Math.min(W, H) * .07) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillStyle = /^(NO|TOO|WAY|MISSED|BALK)/.test(HJ.msg) ? "#ff4f5e" : "#ffcd2e";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340";
+      const y = H * .33;
+      ctx.strokeText(HJ.msg, W / 2, y); ctx.fillText(HJ.msg, W / 2, y);
       ctx.globalAlpha = 1;
     }
   }
@@ -1277,7 +1640,7 @@ li.fresh .r { color: #fff; }
       for (let x = o - sp; x < W + sp; x += sp) {
         const idx = Math.floor((x - off) / sp) + r * 7;
         ctx.fillStyle = CROWD[((idx * 2654435761) >>> 0) % CROWD.length];
-        const bob = state === "landed" || state === "sdone" || state === "llanded" ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
+        const bob = state === "landed" || state === "sdone" || state === "llanded" || (state === "hresult" && HJ.lastClear) ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
         ctx.beginPath(); ctx.arc(x, st + 8 + r * rh - bob, 3.2, 0, 7); ctx.fill();
       }
     }
@@ -1291,6 +1654,7 @@ li.fresh .r { color: #fff; }
 
     if (mode === "sprint") { drawSprint(sx, gy); return; }
     if (mode === "longjump") { drawLJ(sx, gy); return; }
+    if (mode === "highjump") { drawHJ(sx, gy); return; }
     // ground: grass then runway lane
     ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, gh);
     ctx.fillStyle = "#3aa045";
