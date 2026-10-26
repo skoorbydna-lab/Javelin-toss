@@ -117,6 +117,9 @@ canvas { display: block; width: 100%; height: 100%; }
 .play.lj { background: var(--hot); color: #fff; box-shadow: 0 6px 0 #b8293a; }
 .play.hj { background: #7c5cff; color: #fff; box-shadow: 0 6px 0 #5a3fd1; }
 .play.hj:active { box-shadow: 0 2px 0 #5a3fd1; }
+.events .play:last-child:nth-child(even) { grid-column: 1 / -1; }
+.play.r4 { background: #ff9f43; color: var(--ink); box-shadow: 0 6px 0 #c76f16; }
+.play.r4:active { box-shadow: 0 2px 0 #c76f16; }
 .cb { font-family: var(--body); font-weight: 800; font-size: 11px; color: #9fb0e0; }
 .raise { position: absolute; left: 50%; bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) + 10px)); transform: translateX(-50%); pointer-events: auto; background: rgba(27,35,64,.9); border-radius: 18px; padding: 8px 12px 12px; text-align: center; }
 .raise p { margin: 0 0 6px; font-weight: 900; font-size: 12px; letter-spacing: .12em; color: var(--sun); }
@@ -204,9 +207,10 @@ li.fresh .r { color: #fff; }
       <h1 class="logo" id="mTitle">Tap<br><em>Athletics</em></h1>
       <p class="byline" id="byline">by Brooky</p>
       <div id="mIntro">
-        <p class="sub"><b>Olympics:</b> play all four events in a row (100m, long jump, high jump, javelin) and score points, decathlon style.</p>
+        <p class="sub"><b>Olympics:</b> play all five events in a row (100m, long jump, high jump, 400m, javelin) and score points, decathlon style.</p>
         <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
         <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
+        <p class="sub"><b>400m:</b> tap left, right, left, right with an even rhythm (tap along to the beat). Find a steady pace: too slow loses speed, too fast burns your stamina and you tie up before the line.</p>
         <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
         <p class="sub"><b>Long jump:</b> hold for exactly one second, then let go to start. Tap fast when TAP! flashes, then press right at the board and hold while the arrow rises. Let go at the perfect angle.</p>
       </div>
@@ -225,6 +229,7 @@ li.fresh .r { color: #fff; }
         <button class="play alt" id="playSprint" type="button">100M</button>
         <button class="play lj" id="playLj" type="button">LONG JUMP</button>
         <button class="play hj" id="playHj" type="button">HIGH JUMP</button>
+        <button class="play r4" id="playR4" type="button">400M</button>
         <button class="play" id="play" type="button">JAVELIN</button>
       </div>
     </div>
@@ -234,6 +239,7 @@ li.fresh .r { color: #fff; }
         <button class="tab" id="tabSpr" type="button" role="tab" aria-selected="false">100m</button>
         <button class="tab" id="tabLj" type="button" role="tab" aria-selected="false">Long jump</button>
         <button class="tab" id="tabHj" type="button" role="tab" aria-selected="false">High jump</button>
+        <button class="tab" id="tabR4" type="button" role="tab" aria-selected="false">400m</button>
         <button class="tab" id="tabThrow" type="button" role="tab" aria-selected="false">Javelin</button>
       </div>
       <p class="src" id="src">Scores on this device</p>
@@ -241,9 +247,10 @@ li.fresh .r { color: #fff; }
       <ol id="listSpr" hidden></ol>
       <ol id="listLj" hidden></ol>
       <ol id="listHj" hidden></ol>
+      <ol id="listR4" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.3</p>
+      <p class="ver">Version 3.4</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -251,6 +258,7 @@ li.fresh .r { color: #fff; }
           <button class="ghost" id="resetSpr" type="button">Reset 100m</button>
           <button class="ghost" id="resetLj" type="button">Reset long jump</button>
           <button class="ghost" id="resetHj" type="button">Reset high jump</button>
+          <button class="ghost" id="resetR4" type="button">Reset 400m</button>
           <button class="ghost" id="resetThrow" type="button">Reset javelin</button>
         </span>
         <p class="adminMsg" id="adminMsg" hidden></p>
@@ -304,9 +312,10 @@ li.fresh .r { color: #fff; }
   function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
   function renderHud() {
     $("olyTag").hidden = !OLY.active;
-    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 4: 100M" : mode === "longjump" ? "EVENT 2 OF 4: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 4: HIGH JUMP" : "EVENT 4 OF 4: JAVELIN");
+    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 5: 100M" : mode === "longjump" ? "EVENT 2 OF 5: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 5: HIGH JUMP" : mode === "r400" ? "EVENT 4 OF 5: 400M" : "EVENT 5 OF 5: JAVELIN");
     $("p3").hidden = mode !== "sprint";
     if (mode === "highjump") { renderHjHud(); return; }
+    if (mode === "r400") { renderR4Hud(); return; }
     if (mode === "sprint") { renderSprintHud(); return; }
     $("hudBestK").textContent = "BEST";
     for (let i = 0; i < 3; i++) $("p" + i).querySelector("b").textContent = (mode === "longjump" ? "JUMP " : "THROW ") + (i + 1);
@@ -381,12 +390,18 @@ li.fresh .r { color: #fff; }
       $("rSeries").textContent = "100m: " + (r.spr ? r.spr.toFixed(2) + " s" : "DQ") + "  →  " + p.spr + " pts\n" +
         "Long jump: " + (r.lj !== null ? r.lj.toFixed(2) + " m" : "no jump") + "  →  " + p.lj + " pts\n" +
         "High jump: " + (r.hj !== null ? fmtH(r.hj) + " m" : "no height") + "  →  " + p.hj + " pts\n" +
+        "400m: " + (r.r4 ? r.r4.toFixed(2) + " s" : "DQ") + "  →  " + p.r4 + " pts\n" +
         "Javelin: " + (r.jav !== null ? r.jav.toFixed(2) + " m" : "no throw") + "  →  " + p.jav + " pts";
     } else if (results && mode === "sprint") {
       set(1, "TIME", S.dq ? "DQ" : S.time.toFixed(2) + " s");
       set(2, "PLACE", S.dq ? "—" : ["1st", "2nd", "3rd", "4th"][S.place - 1]);
       set(3, "YOUR BEST", lastPB === null ? "—" : lastPB.toFixed(2) + " s");
       $("rSeries").textContent = S.dq ? "False start: disqualified" : "Reactions: " + S.rts.map(r => r === null ? "miss" : r.toFixed(2)).join("  ·  ");
+    } else if (results && mode === "r400") {
+      set(1, "TIME", R4.dq ? "DQ" : R4.time.toFixed(2) + " s");
+      set(2, "PLACE", R4.dq ? "—" : ["1st", "2nd", "3rd", "4th"][R4.place - 1]);
+      set(3, "YOUR BEST", lastPB === null ? "—" : lastPB.toFixed(2) + " s");
+      $("rSeries").textContent = R4.dq ? "False start: disqualified" : "Splits: " + R4.splits.map((v, i) => (i + 1) * 100 + "m " + v.toFixed(2)).join("  ·  ") + "  ·  400m " + R4.time.toFixed(2) + (R4.cons !== null ? "\nRhythm consistency " + (R4.cons * 100).toFixed(1) + "%" : "");
     } else if (results && mode === "highjump") {
       const F = HJ.final;
       set(1, "CLEARED", F ? fmtH(F.h) + " m" : "NM");
@@ -407,22 +422,23 @@ li.fresh .r { color: #fff; }
     spr: t => t ? Math.floor(25.4347 * Math.pow(Math.max(0, 18 - t), 1.81)) : 0,
     lj: m => m ? Math.floor(0.14354 * Math.pow(Math.max(0, m * 100 - 220), 1.4)) : 0,
     hj: h => h ? Math.floor(0.8465 * Math.pow(Math.max(0, h * 100 - 75), 1.42)) : 0,
+    r4: t => t ? Math.floor(1.53775 * Math.pow(Math.max(0, 82 - t), 1.81)) : 0,
     jav: m => m ? Math.floor(10.14 * Math.pow(Math.max(0, m - 7), 1.08)) : 0
   };
-  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, hj: null, jav: null }; startSprint(); }
+  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, hj: null, r4: null, jav: null }; startSprint(); }
   function olyFinish() {
     const r = OLY.res;
-    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), hj: POINTS.hj(r.hj), jav: POINTS.jav(r.jav) };
-    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.hj + OLY.pts.jav;
+    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), hj: POINTS.hj(r.hj), r4: POINTS.r4(r.r4), jav: POINTS.jav(r.jav) };
+    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.hj + OLY.pts.r4 + OLY.pts.jav;
     OLY.rank = boardPos("oly", OLY.total);
     const sub = submit("oly", OLY.total); OLY.pb = sub.best;
     OLY.active = false; tab = "oly";
     showMenu("oly");
-    sfx.cheer(Math.min(1, OLY.total / 4400), sub.improved && OLY.rank === 1);
+    sfx.cheer(Math.min(1, OLY.total / 5400), sub.improved && OLY.rank === 1);
   }
 
   // ---------- records: one best score per player on each board (Firebase, with a this-device fallback)
-  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics", KEY_HJ = KEY + "-highjump";
+  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics", KEY_HJ = KEY + "-highjump", KEY_R4 = KEY + "-400m";
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
     authDomain: "javelin-toss-fe81d.firebaseapp.com",
@@ -435,11 +451,12 @@ li.fresh .r { color: #fff; }
     oly: { key: KEY_OLY, coll: "olympics", asc: false, list: "listOly", tabEl: "tabOly", reset: "resetOly", label: "Olympics", fmt: d => String(Math.round(d)), empty: "Play Olympics mode to post a points total." },
     spr: { key: KEY_SPR, coll: "sprints", asc: true, list: "listSpr", tabEl: "tabSpr", reset: "resetSpr", label: "100m", fmt: d => d.toFixed(2), empty: "No races yet. Be the first!" },
     lj: { key: KEY_LJ, coll: "longjumps", asc: false, list: "listLj", tabEl: "tabLj", reset: "resetLj", label: "long jump", fmt: d => d.toFixed(2), empty: "No jumps yet. Be the first!" },
+    r4: { key: KEY_R4, coll: "r400s", asc: true, list: "listR4", tabEl: "tabR4", reset: "resetR4", label: "400m", fmt: d => d.toFixed(2), empty: "No 400m races yet. Be the first!" },
     hj: { key: KEY_HJ, coll: "highjumps", asc: false, list: "listHj", tabEl: "tabHj", reset: "resetHj", label: "high jump", fmt: hjFmt, empty: "No heights cleared yet. Be the first!" },
     jav: { key: KEY, coll: "throws", asc: false, list: "list", tabEl: "tabThrow", reset: "resetThrow", label: "javelin", fmt: d => d.toFixed(2), empty: "No throws yet. Be the first!" }
   };
   let anyOk = false, tab = "oly", fdb = null, online = false, netErr = "", lastPB = null;
-  const remote = { oly: [], spr: [], lj: [], hj: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, hj: null, jav: null };
+  const remote = { oly: [], spr: [], lj: [], hj: [], r4: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, hj: null, r4: null, jav: null };
   const atLeast = (b, a, c) => BOARDS[b].asc ? a <= c : a >= c;
   const beats = (b, a, c) => BOARDS[b].asc ? a < c : a > c;
 
@@ -555,7 +572,7 @@ li.fresh .r { color: #fff; }
   setupAdmin();
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
-  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
+  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playR4", () => start400()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
     $(id).addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); OLY.active = false; go(); });
   });
 
@@ -594,6 +611,21 @@ li.fresh .r { color: #fff; }
       return true;
     }
     const ok = () => ac && !muted;
+    let mus = null;
+    const RIFF = [0, 0, 7, 0, 10, 7, 12, 10];
+    function beat(i, t) {
+      if (!ok()) return;
+      const iv = mus.iv, left = i % 2 === 0;
+      if (left) tone(t, .14, "sine", 120, 45, .42);                          // left foot: low thump
+      else { noise(t, .07, "bandpass", 2400, 1.1, .16, .002); tone(t, .05, "triangle", 420, 380, .05); } // right foot: snap
+      noise(t + iv / 2, .03, "highpass", 7000, .7, mus.intense ? .08 : .045, .001); // off-beat hat
+      const f = 55 * Math.pow(2, RIFF[i % 8] / 12);
+      tone(t, iv * .85, "triangle", f, f, .1);                               // bass line
+      if (mus.intense) {
+        noise(t + iv / 4, .02, "highpass", 8000, .7, .04, .001); noise(t + iv * 3 / 4, .02, "highpass", 8000, .7, .04, .001);
+        if (i % 4 === 0) [220, 277.2, 329.6].forEach(fq => tone(t, iv * 3.6, "sawtooth", fq, fq, .018));
+      }
+    }
     function noise(t, dur, type, freq, q, peak, attack, out) {
       const src = ac.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
       const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
@@ -694,6 +726,16 @@ li.fresh .r { color: #fff; }
         if (!ok()) return; const t = ac.currentTime;
         tone(t, 0.12, "square", 1175, 1175, 0.16); tone(t + 0.13, 0.1, "square", 1568, 1568, 0.14);
       },
+      musicStart(iv) {
+        if (!init()) return; this.musicStop();
+        mus = { iv, next: ac.currentTime + .08, step: 0, intense: false };
+        mus.timer = setInterval(() => { // schedule a little ahead so the beat stays steady
+          if (!mus) return;
+          while (mus.next < ac.currentTime + .15) { beat(mus.step, mus.next); mus.next += mus.iv; mus.step++; }
+        }, 25);
+      },
+      musicStop() { if (mus) { clearInterval(mus.timer); mus = null; } },
+      musicIntense(on) { if (mus) mus.intense = on; },
       stumble() {
         if (!ok()) return; const t = ac.currentTime;
         noise(t, 0.16, "lowpass", 500, 0.8, 0.5, 0.004); tone(t, 0.2, "sine", 160, 70, 0.5);
@@ -719,17 +761,23 @@ li.fresh .r { color: #fff; }
     if (mode === "sprint") { sprintPress(); return; }
     if (mode === "longjump") { ljPress(); return; }
     if (mode === "highjump") { hjPress(); return; }
+    if (mode === "r400") { r4Press(); return; }
     if (state === "ready") startRun();
     else if (state === "running") startCharge();
     else if (state === "landed") { if (throws.length < 3) newThrow(); else if (OLY.active) olyFinish(); else showMenu(true); }
   }
   function unpress() { if (mode === "javelin" && state === "charging") release(); else if (mode === "longjump" && state === "laim") ljLock(); else if (mode === "longjump" && state === "lcount") ljStart(J.tc); else if (mode === "highjump") hjUnpress(); }
-  stage.addEventListener("pointerdown", e => { if (e.button > 0) return; e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {} press(); });
+  stage.addEventListener("pointerdown", e => {
+    if (e.button > 0) return; e.preventDefault();
+    if (mode === "r400" && (state === "r4gun" || state === "r4race")) { sfx.unlock(); r4Tap(e.clientX < stage.clientWidth / 2 ? "L" : "R"); return; }
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {} press();
+  });
   stage.addEventListener("pointerup", e => { e.preventDefault(); unpress(); });
   stage.addEventListener("pointercancel", unpress);
   stage.addEventListener("contextmenu", e => e.preventDefault());
   document.addEventListener("keydown", e => {
     if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+    if (mode === "r400" && /^(ArrowLeft|ArrowRight|KeyA|KeyD|KeyZ|KeyX)$/.test(e.code)) { e.preventDefault(); if (!e.repeat) { sfx.unlock(); r4Tap(/Left|KeyA|KeyZ/.test(e.code) ? "L" : "R"); } return; }
     if (e.code === "Space") { e.preventDefault(); if (!e.repeat) press(); }
   });
   document.addEventListener("keyup", e => { if (e.code === "Space") { e.preventDefault(); unpress(); } });
@@ -739,10 +787,12 @@ li.fresh .r { color: #fff; }
     for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * spread, vy: Math.random() * spread * .6, life: 1, r: .12 + Math.random() * .2, col });
   }
   function update(dt) {
+    if (mode !== "r400" || (state !== "r4gun" && state !== "r4race")) sfx.musicStop();
     time += dt;
     if (mode === "sprint") { sprintUpdate(dt); return; }
     if (mode === "longjump") { ljUpdate(dt); return; }
     if (mode === "highjump") { hjUpdate(dt); return; }
+    if (mode === "r400") { r4Update(dt); return; }
     if (state === "running" || state === "charging") {
       aSpeed += ACC * dt; ax += aSpeed * dt;
       const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
@@ -1411,7 +1461,7 @@ li.fresh .r { color: #fff; }
       state = "hdone"; HJ.final = hjSummary();
       lastPB = HJ.final ? submit("hj", HJ.final.code).best : personalBest("hj"); tab = OLY.active ? "oly" : "hj";
       if (OLY.active) OLY.res.hj = HJ.final ? HJ.final.h : null;
-      showToast("OUT!", HJ.final ? "Best " + fmtH(HJ.final.h) + " m" : "No height cleared", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
+      showToast("OUT!", HJ.final ? "Best " + fmtH(HJ.final.h) + " m" : "No height cleared", OLY.active ? "TAP FOR THE 400M" : "TAP FOR RESULTS", true);
       sfx.groan();
     } else {
       state = "hresult";
@@ -1450,7 +1500,7 @@ li.fresh .r { color: #fff; }
     }
     else if (state === "hflight") { if (HJ.f.archT === null && !HJ.f.decided) { HJ.f.archT = HJ.f.t; sfx.tick(); } }
     else if (state === "hresult") { if ($("raise").hidden) newHJAttempt(); }
-    else if (state === "hdone") { if (OLY.active) startGame(); else showMenu(true); }
+    else if (state === "hdone") { if (OLY.active) start400(); else showMenu(true); }
   }
   function hjUnpress() {
     if (HJ.holding) HJ.bt = (performance.now() - HJ.holdStart) / 1000;
@@ -1614,6 +1664,284 @@ li.fresh .r { color: #fff; }
     }
   }
 
+  // ---------- 400m
+  // Alternate left and right taps. Speed comes from cadence (taps per real second) and how even the rhythm is.
+  // Tapping faster than the cruising pace drains stamina; when stamina runs low you tie up. The race clock runs 1.5x.
+  const R4K = { CLOCK: 1.5, VCAP: 10.2, VPER: 2.75, CRUISE: 3.0, DRAIN0: .004, DRAINK: .06, DEXP: 1.4, REC: .006, GUN_WAIT: 1.5 };
+  const R4_KITS = ["#e8443a", "#f2b21b", "#8a4fd8"];
+  const R4 = { x: 0, v: 0, t: 0, S: 1, taps: [], last: null, ph: 0, phT: 0, started: false, rivals: [], splits: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, timer: 0, setDelay: 1.5, warnT: 0, rt: null, padL: 0, padR: 0, evenT: 0, c: 0, cDisp: 0, eff: 1, all: [], cons: null };
+  function r4Speed(c, cv, S) {
+    const eff = Math.max(.7, Math.min(1, 1 - Math.max(0, cv - .05)));
+    const stam = S < .3 ? .62 + S * 1.27 : 1;
+    return { vt: Math.min(R4K.VCAP, R4K.VPER * c) * eff * stam, eff };
+  }
+  // ghost pace: one well-judged race (steady 3.3 taps a second), recorded once and stretched to each ghost's time
+  const R4GHOST = (() => {
+    const dt = 1 / 120, xs = []; let t = 0, x = 0, v = 0, S = 1, T = null, after = 0;
+    while (after < 2) {
+      if (T === null) {
+        const { vt } = r4Speed(3.3, .05, S);
+        v += (vt - v) / (vt > v ? 1.0 : .6) * dt; S -= (R4K.DRAIN0 + R4K.DRAINK * Math.pow(.3, R4K.DEXP)) * dt;
+      } else { v = Math.max(0, v - 5 * dt); after += dt; }
+      const px = x; x += v * dt; t += dt;
+      if (T === null && x >= 400) T = t - dt + dt * (400 - px) / (x - px);
+      xs.push(x);
+    }
+    return { dt, xs, T };
+  })();
+  function r4say(t) { R4.msg = t; R4.msgT = 1.4; }
+  function start400() {
+    mode = "r400"; freshName.r4 = null;
+    $("menu").hidden = true; $("toast").hidden = true; setCue(false);
+    Object.assign(R4, { x: 0, v: 0, t: 0, S: 1, taps: [], last: null, ph: 0, phT: 0, started: false, splits: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, timer: 0, warnT: 0, rt: null, padL: 0, padR: 0, evenT: 0, c: 0, cDisp: 0, eff: 1, all: [], cons: null, pin: null });
+    const top = entries("r4"), seen = new Set(top.map(r => nameKey(r.n)));
+    const board = top.slice(0, 3).map(r => ({ name: r.n, T: Number(r.d) }));
+    const cpuNames = ["Dash", "Bolt-bot", "Zippy", "Rocket", "Blur"].filter(n => !seen.has(n.toLowerCase()));
+    const cpuTimes = [49.5, 52.5, 56];
+    while (board.length < 3) board.push({ name: cpuNames.shift(), T: Math.round((cpuTimes[board.length] + rand(-.6, .6)) * 100) / 100 });
+    R4.rivals = board.slice().reverse().map((g, i) => ({ kit: R4_KITS[i], name: g.name, T: g.T, x: 0, v: 0 }));
+    parts = []; aSpeed = 0; stepIdx = 0;
+    state = "r4ready"; setPrompt("TAP TO GO TO YOUR MARKS", true); setGo("GO"); renderHud();
+  }
+  function r4FalseStart() {
+    R4.dq = true; state = "r4done"; setGo(""); setPrompt(""); shake = .25; sfx.groan();
+    lastPB = personalBest("r4"); if (OLY.active) OLY.res.r4 = null;
+    showToast("FALSE START!", "Disqualified", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
+  }
+  function r4Press() { // the start sequence and the end use plain taps; racing uses left/right (see r4Tap)
+    if (state === "r4ready") { state = "r4marks"; R4.timer = 0; setPrompt("ON YOUR MARKS"); setGo(""); }
+    else if (state === "r4marks" || state === "r4set") r4FalseStart();
+    else if (state === "r4done") { if (OLY.active) startGame(); else showMenu(true); }
+  }
+  function r4Tap(side) {
+    if (state === "r4gun" || state === "r4race") {
+      const now = performance.now() / 1000;
+      if (side === "L") R4.padL = .18; else R4.padR = .18;
+      if (state === "r4gun") { R4.started = true; R4.rt = R4.t; state = "r4race"; setPrompt(""); setGo(""); setCue(false); r4say("REACTION " + R4.t.toFixed(2)); }
+      if (R4.last && R4.last.side === side) { // same foot twice: stumble
+        R4.v *= .85; R4.taps = []; shake = .12; sfx.stumble(); r4say("STUMBLE! LEFT, RIGHT…");
+      } else if (R4.last) { R4.taps.push(now - R4.last.at); R4.all.push(now - R4.last.at); }
+      if (R4.taps.length > 6) R4.taps.shift();
+      R4.last = { side, at: now }; R4.phT += Math.PI;
+      sfx.step(Math.max(4, R4.v));
+    } else r4Press();
+  }
+  function r4Consistency() { // how evenly each tap followed the one before, as a percentage
+    const g = R4.all; if (g.length < 3) return null;
+    let d = 0; for (let i = 1; i < g.length; i++) d += Math.abs(g[i] - g[i - 1]) / ((g[i] + g[i - 1]) / 2);
+    return Math.max(0, 1 - d / (g.length - 1));
+  }
+  function r4Finish() {
+    state = "r4done"; setPrompt(""); setGo(""); R4.cons = r4Consistency();
+    const time = Math.round(R4.time * 100) / 100; R4.time = time;
+    R4.place = 1 + R4.rivals.filter(r => r.T < time).length;
+    const rec = rankOf("r4", time) === 0;
+    lastPB = submit("r4", time).best; tab = OLY.active ? "oly" : "r4";
+    if (OLY.active) OLY.res.r4 = time;
+    const word = rec ? "NEW RECORD!" : R4.place === 1 ? "WINNER!" : ["", "", "2ND PLACE", "3RD PLACE", "4TH PLACE"][R4.place];
+    showToast(word, time.toFixed(2) + " s", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS");
+    if (R4.cons !== null) { $("tStats").innerHTML = "RHYTHM CONSISTENCY <b>" + (R4.cons * 100).toFixed(1) + "%</b>"; $("tStats").hidden = false; }
+    setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (60 - time) / 14)), rec), 120);
+    renderHud();
+  }
+  function r4Update(dt) {
+    if (state === "r4marks") { R4.timer += dt; if (R4.timer > 1.4) { state = "r4set"; R4.timer = 0; R4.setDelay = rand(1.0, 2.8); setPrompt("SET…"); } }
+    else if (state === "r4set") { R4.timer += dt; if (R4.timer >= R4.setDelay) { state = "r4gun"; R4.t = 0; R4.flash = .25; sfx.gun(); setPrompt("GO! TAP LEFT, RIGHT, LEFT…"); sfx.musicStart(1 / 3.3); } }
+    const gdt = dt * R4K.CLOCK;
+    if (state === "r4gun") { R4.t += gdt; if (R4.t > R4K.GUN_WAIT) { R4.started = true; R4.rt = R4.t; state = "r4race"; setPrompt(""); } }
+    else if (state === "r4race" || (state === "r4done" && !R4.dq)) {
+      R4.t += gdt;
+      if (R4.time === null) {
+        // cadence from recent gaps, falling away if you stop tapping
+        const now = performance.now() / 1000, gaps = R4.taps;
+        let c = 0, cv = .3, m3 = 1;
+        if (gaps.length) {
+          const mean = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+          const sd = Math.sqrt(gaps.reduce((s, g) => s + (g - mean) * (g - mean), 0) / gaps.length);
+          const last3 = gaps.slice(-3); m3 = last3.reduce((s, g) => s + g, 0) / last3.length;
+          c = 1 / m3; cv = gaps.length >= 3 ? sd / mean : .1;
+        }
+        const since = R4.last ? now - R4.last.at : 9;
+        if (since > 1.5 * m3) c = Math.min(c, 1 / since); // slowing right down or stopped
+        if (since > 1.2) c = 0;
+        R4.c = c;
+        const { vt, eff } = r4Speed(c, cv, R4.S); R4.eff = eff;
+        R4.v += (vt - R4.v) / (vt > R4.v ? 1.0 : .6) * gdt; R4.v = Math.max(0, R4.v);
+        R4.S += ((c < 2.8 && c > 0 ? R4K.REC : 0) - (R4K.DRAIN0 + R4K.DRAINK * Math.pow(Math.max(0, c - R4K.CRUISE), R4K.DEXP))) * gdt;
+        R4.S = Math.max(0, Math.min(1, R4.S));
+        const px = R4.x; R4.x += R4.v * gdt;
+        if (Math.floor(R4.x / 10) > Math.floor(px / 10) && R4.x < 400) R4.pin = { m: Math.floor(R4.x / 10) * 10, t: .8, at: null };
+        if (px < 300 && R4.x >= 300) sfx.musicIntense(true);
+        for (const m of [100, 200, 300]) if (px < m && R4.x >= m) { const st = R4.t - gdt + gdt * (m - px) / Math.max(1e-6, R4.x - px); R4.splits.push(st); r4say(m + "m  " + st.toFixed(2)); renderHud(); }
+        if (R4.x >= 400) { R4.time = R4.t - gdt + gdt * (400 - px) / Math.max(1e-6, R4.x - px); r4Finish(); }
+        // coaching
+        R4.warnT = Math.max(0, R4.warnT - dt);
+        if (!R4.warnT && R4.msgT <= 0) {
+          if (R4.S < .25 && R4.x < 380) { r4say("TYING UP!"); R4.warnT = 3; }
+          else if (c > 3.55 && R4.x < 300) { r4say("GOING TOO HARD!"); R4.warnT = 3; }
+          else if (c > 0 && c < 2.6 && R4.x > 20) { r4say("TOO SLOW!"); R4.warnT = 3; }
+          else if (R4.x > 330 && R4.S > .2 && c > 3.3) { r4say("STRONG FINISH!"); R4.warnT = 6; }
+        }
+        R4.evenT = eff > .97 && c > 2.6 ? Math.min(1, R4.evenT + dt * 3) : Math.max(0, R4.evenT - dt * 3);
+      } else { R4.v = Math.max(0, R4.v - 4 * gdt); R4.x += R4.v * gdt; }
+      R4.rivals.forEach(r => {
+        const tt = R4.t * R4GHOST.T / r.T, i = tt / R4GHOST.dt;
+        const i0 = Math.min(R4GHOST.xs.length - 1, Math.floor(i)), i1 = Math.min(R4GHOST.xs.length - 1, i0 + 1);
+        const nx = R4GHOST.xs[i0] + (R4GHOST.xs[i1] - R4GHOST.xs[i0]) * (i - Math.floor(i));
+        r.v = Math.max(0, (nx - r.x) / Math.max(1e-6, gdt)); r.x = nx;
+      });
+      if (state === "r4race") $("hudBest").textContent = R4.t.toFixed(2);
+    }
+    R4.ph += (R4.phT - R4.ph) * Math.min(1, dt * 14);
+    R4.cDisp += (R4.c - R4.cDisp) * Math.min(1, dt * 6);
+    aSpeed = R4.v;
+    R4.msgT = Math.max(0, R4.msgT - dt); R4.flash = Math.max(0, R4.flash - dt);
+    R4.padL = Math.max(0, R4.padL - dt); R4.padR = Math.max(0, R4.padR - dt);
+    if (R4.pin) { R4.pin.t -= dt; if (R4.pin.t <= 0) R4.pin = null; }
+    shake = Math.max(0, shake - dt);
+    const tp = Math.min(H / 8.5, W / 16), tx = R4.x + (W / tp) * .15;
+    const snap = state === "r4ready";
+    ppm = tp; camX = snap ? tx : camX + (tx - camX) * (1 - Math.exp(-dt * 6));
+  }
+  function renderR4Hud() {
+    $("hudBestK").textContent = "TIME";
+    $("hudBest").textContent = R4.time !== null ? R4.time.toFixed(2) : R4.started ? R4.t.toFixed(2) : "0.00";
+    ["100M", "200M", "300M"].forEach((lab, i) => {
+      const p = $("p" + i), v = R4.splits[i];
+      p.querySelector("b").textContent = lab;
+      p.querySelector("span").textContent = v === undefined ? "—" : v.toFixed(2);
+      p.classList.remove("foul");
+      p.classList.toggle("now", i === R4.splits.length && R4.started && R4.time === null);
+    });
+  }
+  function drawR4(sx, gy) {
+    const band = H - gy, top = gy + band * .06, laneH = (band * .94) / 4;
+    ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, band + 20);
+    ctx.fillStyle = "#d9523a"; ctx.fillRect(-20, top, W + 40, band);
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    for (let i = 0; i <= 4; i++) ctx.fillRect(-20, top + laneH * i - 1, W + 40, 2);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = Math.max(11, Math.min(18, laneH * .6)) + "px 'Lilita One', Impact, sans-serif";
+    for (let x = 10; x < 400; x += 10) {
+      const px = sx(x); if (px < -40 || px > W + 40) continue;
+      const big = x % 100 === 0, mid = x % 50 === 0;
+      ctx.fillStyle = big ? "rgba(255,255,255,.95)" : "rgba(255,255,255," + (mid ? .45 : .2) + ")";
+      ctx.fillRect(px - (big ? 2 : 1), top, big ? 4 : 2, band);
+      // trackside board: distance still to run
+      if (R4.pin && R4.pin.m === x) continue;
+      const left = 400 - x, bw2 = 56, bh2 = 28, by2 = gy - bh2 - 4;
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(px - 2, by2 + bh2, 4, 5);
+      ctx.fillStyle = left <= 100 ? "#ff4f5e" : "#1b2340"; ctx.fillRect(px - bw2 / 2, by2, bw2, bh2);
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(px - bw2 / 2 + 2, by2 + 2, bw2 - 4, bh2 - 4);
+      ctx.fillStyle = "#fff"; ctx.font = "20px 'Lilita One', Impact, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(left), px, by2 + bh2 / 2 + 1);
+    }
+    const s0 = sx(0);
+    if (s0 > -40 && s0 < W + 40) { ctx.fillStyle = "#fff"; ctx.fillRect(s0 - 3, top, 6, band); }
+    const f = sx(400);
+    if (f > -80 && f < W + 80) {
+      const sq = Math.max(4, laneH / 3);
+      for (let y = top, r = 0; y < H; y += sq, r++) for (let c = 0; c < 2; c++) { ctx.fillStyle = (r + c) % 2 ? "#1b2340" : "#fff"; ctx.fillRect(f - sq + c * sq, y, sq, sq); }
+      const gh = 3.2 * ppm;
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(f - 3, gy - gh, 6, gh + band * .06);
+      ctx.fillStyle = "#ff4f5e"; ctx.fillRect(f - 2.2 * ppm, gy - gh - .8 * ppm, 4.4 * ppm, .8 * ppm);
+      ctx.fillStyle = "#fff"; ctx.font = Math.max(12, ppm * .55) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillText("FINISH", f, gy - gh - .4 * ppm);
+    }
+    // the board you just passed holds still for a moment, larger, then fades
+    if (R4.pin) {
+      if (R4.pin.at === null) R4.pin.at = sx(R4.pin.m);
+      const left = 400 - R4.pin.m, a = Math.min(1, R4.pin.t / .3), w = 120, h = 54, x0 = Math.min(W - w / 2 - 8, Math.max(w / 2 + 8, R4.pin.at)), y0 = (gy + (H - gy) * .06 + (H - gy) * .94 / 4 * .85 - 2.15 * ppm - 9) - h - 8; // above the name tags
+      ctx.globalAlpha = a;
+      ctx.fillStyle = left <= 100 ? "#ff4f5e" : "#1b2340"; ctx.fillRect(x0 - w / 2, y0, w, h);
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.strokeRect(x0 - w / 2 + 3, y0 + 3, w - 6, h - 6);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "30px 'Lilita One', Impact, sans-serif"; ctx.fillText(left + "m", x0, y0 + h * .42);
+      ctx.font = "900 10px Nunito, sans-serif"; ctx.fillText("TO GO", x0, y0 + h * .8);
+      ctx.globalAlpha = 1;
+    }
+    // runners, far lane first, with name tags
+    const lanes = R4.rivals.map((r, i) => ({ r, i })).concat([{ r: R4, i: 3 }]);
+    lanes.forEach(({ r, i }) => {
+      const base = top + laneH * (i + .85), me = r === R4;
+      const p = (state === "r4ready" || state === "r4marks") ? 1 : (state === "r4set" || state === "r4gun") && (!me || !R4.started) ? 2 : 0;
+      drawRunner(sx(r.x), base, ppm, me ? R4.ph : r.x * 1.9, r.v > .5, me ? "#2a64e0" : r.kit, p);
+      const tag = me ? "YOU" : r.name + "  " + r.T.toFixed(2);
+      const tx = sx(r.x) + .2 * ppm, ty = base - 2.15 * ppm;
+      ctx.font = "800 " + Math.max(10, Math.min(14, ppm * .32)) + "px Nunito, sans-serif";
+      const w = ctx.measureText(tag).width + 10;
+      ctx.fillStyle = me ? "rgba(42,100,224,.9)" : "rgba(27,35,64,.75)"; ctx.fillRect(tx - w / 2, ty - 9, w, 18);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tag, tx, ty + 1);
+    });
+    // mini track map (top left, under the split boxes)
+    const mx = 18, my = 74, mw = Math.min(150, W * .2), mh = mw * .48, rr = mh / 2;
+    ctx.fillStyle = "rgba(27,35,64,.75)"; ctx.fillRect(mx - 8, my - 8, mw + 16, mh + 16);
+    ctx.strokeStyle = "#d9523a"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(mx + rr, my); ctx.lineTo(mx + mw - rr, my); ctx.arc(mx + mw - rr, my + rr, rr, -Math.PI / 2, Math.PI / 2); ctx.lineTo(mx + rr, my + mh); ctx.arc(mx + rr, my + rr, rr, Math.PI / 2, Math.PI * 1.5); ctx.stroke();
+    const straight = mw - 2 * rr, bend = Math.PI * rr, lap = 2 * straight + 2 * bend;
+    const pos = d => { // 400m start is at the beginning of the first bend (bottom-right), running anticlockwise
+      let s = ((d / 400) * lap) % lap;
+      if (s < bend) { const a = Math.PI / 2 - s / rr; return [mx + mw - rr + Math.cos(a) * rr, my + rr + Math.sin(a) * rr]; }
+      s -= bend; if (s < straight) return [mx + mw - rr - s, my];
+      s -= straight; if (s < bend) { const a = -Math.PI / 2 - s / rr; return [mx + rr + Math.cos(a) * rr, my + rr + Math.sin(a) * rr]; }
+      s -= bend; return [mx + rr + s, my + mh];
+    };
+    const fin = pos(0); ctx.fillStyle = "#fff"; ctx.fillRect(fin[0] - 1, fin[1] - 6, 2, 12);
+    R4.rivals.forEach(r => { const p = pos(Math.min(400, r.x)); ctx.fillStyle = r.kit; ctx.beginPath(); ctx.arc(p[0], p[1], 4, 0, 7); ctx.fill(); });
+    const me = pos(Math.min(400, R4.x)); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(me[0], me[1], 6, 0, 7); ctx.fill();
+    ctx.fillStyle = "#2a64e0"; ctx.beginPath(); ctx.arc(me[0], me[1], 4, 0, 7); ctx.fill();
+    // left / right pads
+    if (state === "r4gun" || state === "r4race") {
+      const pr = Math.min(W, H) * .11, py = H - pr - 18;
+      [["L", 18 + pr, R4.padL], ["R", W - 18 - pr, R4.padR]].forEach(([s, x, lit]) => {
+        ctx.fillStyle = lit > 0 ? "rgba(255,205,46,.95)" : "rgba(27,35,64,.55)";
+        ctx.beginPath(); ctx.arc(x, py, pr, 0, 7); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = R4.evenT > .5 ? "#2ec4b6" : "rgba(255,255,255,.7)"; ctx.stroke();
+        ctx.fillStyle = lit > 0 ? "#1b2340" : "#fff"; ctx.font = Math.round(pr * .8) + "px 'Lilita One', Impact, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s, x, py + 2);
+      });
+      // right-hand column: speedometer, then rhythm and stamina side by side
+      const colW = 128, colX = W - 16 - colW, sTop = 172, sBot = H - 2 * pr - 26, sh = Math.max(44, sBot - sTop), bw1 = 16;
+      ctx.fillStyle = "rgba(27,35,64,.8)"; ctx.fillRect(colX, sTop - 22, colW, sh + 36);
+      ctx.font = "900 10px Nunito, sans-serif"; ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      // rhythm: smoothed cadence, cruising zone in green
+      const rX = colX + 22, cmax = 4.5, cd = R4.cDisp, yOf = c => sTop + sh * (1 - Math.min(1, c / cmax));
+      ctx.fillText("RHYTHM", rX + bw1 / 2, sTop - 8);
+      ctx.fillStyle = "rgba(255,255,255,.15)"; ctx.fillRect(rX, sTop, bw1, sh);
+      ctx.fillStyle = "rgba(46,196,182,.6)"; ctx.fillRect(rX, yOf(3.45), bw1, yOf(2.9) - yOf(3.45));
+      ctx.fillStyle = cd > 3.55 ? "#ff4f5e" : cd >= 2.9 ? "#2ec4b6" : "#ffcd2e"; ctx.fillRect(rX - 5, yOf(cd) - 3, bw1 + 10, 6);
+      if (R4.evenT > .5) { ctx.strokeStyle = "#2ec4b6"; ctx.lineWidth = 2; ctx.strokeRect(rX - 2, sTop - 2, bw1 + 4, sh + 4); ctx.fillStyle = "#2ec4b6"; ctx.textBaseline = "top"; ctx.fillText("EVEN", rX + bw1 / 2, sTop + sh + 3); }
+      // stamina with a percentage beside it
+      const sx2 = colX + 72; ctx.fillStyle = "#fff"; ctx.textBaseline = "bottom"; ctx.fillText("STAMINA", sx2 + bw1 / 2, sTop - 8);
+      ctx.fillStyle = "rgba(255,255,255,.15)"; ctx.fillRect(sx2, sTop, bw1, sh);
+      ctx.fillStyle = R4.S < .25 ? "#ff4f5e" : R4.S < .5 ? "#ffcd2e" : "#2ec4b6"; ctx.fillRect(sx2, sTop + sh * (1 - R4.S), bw1, sh * R4.S);
+      ctx.fillStyle = "#fff"; ctx.font = "15px 'Lilita One', Impact, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(Math.round(R4.S * 100) + "%", sx2 + bw1 + 5, Math.min(sBot - 8, Math.max(sTop + 8, sTop + sh * (1 - R4.S))));
+      // speedometer (km/h) above them, under the clock
+      const kmh = R4.v * 3.6, gr = 44, gx = colX + colW / 2, gyc = 76 + gr;
+      ctx.fillStyle = "rgba(27,35,64,.8)"; ctx.fillRect(colX, 70, colW, gr + 30);
+      ctx.lineWidth = 8; ctx.strokeStyle = "rgba(255,255,255,.15)"; ctx.beginPath(); ctx.arc(gx, gyc, gr - 6, Math.PI, 2 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = "#2ec4b6"; ctx.beginPath(); ctx.arc(gx, gyc, gr - 6, Math.PI, Math.PI + Math.PI * Math.min(1, kmh / 40)); ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.7)";
+      for (let k = 0; k <= 40; k += 10) { const a = Math.PI + Math.PI * k / 40; ctx.beginPath(); ctx.moveTo(gx + Math.cos(a) * (gr - 13), gyc + Math.sin(a) * (gr - 13)); ctx.lineTo(gx + Math.cos(a) * (gr - 17), gyc + Math.sin(a) * (gr - 17)); ctx.stroke(); }
+      const na = Math.PI + Math.PI * Math.min(1, kmh / 40);
+      ctx.lineWidth = 3; ctx.strokeStyle = "#ffcd2e"; ctx.beginPath(); ctx.moveTo(gx, gyc); ctx.lineTo(gx + Math.cos(na) * (gr - 10), gyc + Math.sin(na) * (gr - 10)); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.font = "18px 'Lilita One', Impact, sans-serif"; ctx.fillText(kmh.toFixed(1), gx, gyc + 2);
+      ctx.font = "900 10px Nunito, sans-serif"; ctx.textBaseline = "top"; ctx.fillText("KM/H", gx, gyc + 4);
+    }
+    // messages
+    if (R4.msgT > 0) {
+      ctx.globalAlpha = Math.min(1, R4.msgT * 2);
+      ctx.font = Math.round(Math.min(W, H) * .07) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillStyle = /^(STUMBLE|TYING|GOING|TOO)/.test(R4.msg) ? "#ff4f5e" : "#ffcd2e";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const y = H * .28; ctx.strokeText(R4.msg, W / 2, y); ctx.fillText(R4.msg, W / 2, y);
+      ctx.globalAlpha = 1;
+    }
+    if (R4.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (R4.flash * 3).toFixed(2) + ")"; ctx.fillRect(-20, -20, W + 40, H + 40); }
+  }
+
   // ---------- draw
   const CROWD = ["#ff4f5e", "#ffcd2e", "#2ec4b6", "#ffffff", "#7c5cff", "#ff9f43"];
   function draw() {
@@ -1657,7 +1985,7 @@ li.fresh .r { color: #fff; }
       for (let x = o - sp; x < W + sp; x += sp) {
         const idx = Math.floor((x - off) / sp) + r * 7;
         ctx.fillStyle = CROWD[((idx * 2654435761) >>> 0) % CROWD.length];
-        const bob = state === "landed" || state === "sdone" || state === "llanded" || (state === "hresult" && HJ.lastClear) ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
+        const bob = state === "landed" || state === "sdone" || state === "llanded" || (state === "hresult" && HJ.lastClear) || (state === "r4done" && !R4.dq) ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
         ctx.beginPath(); ctx.arc(x, st + 8 + r * rh - bob, 3.2, 0, 7); ctx.fill();
       }
     }
@@ -1672,6 +2000,7 @@ li.fresh .r { color: #fff; }
     if (mode === "sprint") { drawSprint(sx, gy); return; }
     if (mode === "longjump") { drawLJ(sx, gy); return; }
     if (mode === "highjump") { drawHJ(sx, gy); return; }
+    if (mode === "r400") { drawR4(sx, gy); return; }
     // ground: grass then runway lane
     ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, gh);
     ctx.fillStyle = "#3aa045";
