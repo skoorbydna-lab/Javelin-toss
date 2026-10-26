@@ -58,6 +58,9 @@ canvas { display: block; width: 100%; height: 100%; }
 .ico .off { display: none; }
 .ico.muted .on { display: none; }
 .ico.muted .off { display: inline; stroke: var(--hot); }
+.ico.arm { background: var(--hot); }
+.ico.arm::after { content: "QUIT?"; position: absolute; top: 48px; left: 50%; transform: translateX(-50%); font: 900 11px var(--body); letter-spacing: .08em; color: #fff; background: var(--hot); padding: 2px 6px; border-radius: 6px; white-space: nowrap; }
+#quitBtn { position: relative; }
 .ico:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 .tip { margin: 10px 0 0; padding: 8px 10px; border-radius: 12px; background: #26305a; color: #fff; font-weight: 800; font-size: 13px; line-height: 1.35; }
 .best { padding: 5px 14px 4px; border-radius: 14px; background: var(--sun); color: var(--ink); text-align: right; box-shadow: 0 4px 0 #c99700; }
@@ -97,6 +100,52 @@ canvas { display: block; width: 100%; height: 100%; }
 .stat { background: #26305a; border-radius: 14px; padding: 7px 9px; min-width: 0; }
 .stat b { font-size: 9px; letter-spacing: .12em; color: #9fb0e0; white-space: nowrap; }
 .stat div { font-family: var(--display); font-size: clamp(18px, 4.5vh, 26px); color: var(--sun); font-variant-numeric: tabular-nums; }
+.homerow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.homerow .name { margin-top: 0; }
+.howbtn { margin-top: 0; font-family: var(--display); font-size: 18px; letter-spacing: .04em; color: var(--teal); background: transparent; border: 2px solid var(--teal); border-radius: 12px; padding: 6px 14px; cursor: pointer; }
+.howbtn:focus-visible, #howClose:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.howto { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; background: rgba(14,20,40,.75);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-bottom, 0px)); }
+.howcard { background: var(--panel); border-radius: 20px; padding: 14px 20px 16px; width: min(760px, 100%); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 10px 0 #0e1428; }
+.howcard h2 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0; color: #fff; }
+.howsubs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+@media (max-width: 560px) { .howsubs { grid-template-columns: 1fr; } }
+.howsubs .sub { margin-top: 10px; }
+#howClose { margin-top: 14px; font-size: 22px; padding: 8px; }
+.resbtns { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-top: 12px; }
+.resbtns .play { margin-top: 0; font-size: clamp(18px, 5vh, 26px); padding: 8px 6px; }
+.play.home { background: #3a4a85; color: #fff; box-shadow: 0 6px 0 #222c55; }
+.play.home:active { box-shadow: 0 2px 0 #222c55; }
+.logo.small { font-size: clamp(26px, 7vh, 40px); transform: rotate(-2deg); margin-bottom: 8px; }
+@media (max-height: 480px) {
+  .menu { padding-block: 8px; }
+  .menu .card { padding: 12px 16px 14px; gap: 14px; }
+  .menu .logo { font-size: clamp(26px, 8.5vh, 36px); }
+  .menu .homerow { flex-wrap: nowrap; }
+  .menu .homerow .name { font-size: 11px; gap: 6px; }
+  .menu .name input { width: 9ch; font-size: 15px; }
+  .menu .byline { margin-top: 2px; }
+  .menu .homerow { margin-top: 8px; }
+  .menu .name input { padding: 4px 8px; }
+  .menu .howbtn { font-size: 14px; padding: 4px 8px; white-space: nowrap; }
+  .menu .events { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .menu .events .play { font-size: clamp(13px, 4vh, 17px); letter-spacing: .01em; padding: 7px 2px; white-space: nowrap; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+  .menu .events .play:last-child:nth-child(even) { grid-column: auto / span 2; }
+  .menu .tabs { gap: 5px; margin-bottom: 5px; }
+  .howsubs .sub { font-size: 12.5px; margin-top: 7px; line-height: 1.35; }
+  .howcard h2 { font-size: 22px; }
+  #howClose { margin-top: 10px; font-size: 18px; padding: 6px; }
+  .menu .tab { font-size: 13px; padding: 5px 4px; }
+  .menu .src { margin-bottom: 4px; font-size: 11px; }
+  .menu ol { max-height: calc(100vh - 215px); }
+  .menu .resbtns + .name, .menu .stats { margin-top: 2px; }
+  .menu .stat { padding: 5px 8px; }
+  .menu .series { font-size: 12px; margin-top: 6px; line-height: 1.35; }
+  .menu.results ol { max-height: calc(100vh - 195px); }
+  .menu.results .ver { margin-top: 4px; }
+  .menu.results .admin { margin-top: 4px; }
+}
 .series { white-space: pre-line; margin-top: 8px; color: #b9c4ea; font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; }
 .name { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 800; font-size: 13px; color: #b9c4ea; letter-spacing: .06em; }
 .name input { font: 800 16px var(--body); color: var(--ink); background: var(--cream); border: 0; border-radius: 10px; padding: 7px 10px; width: 12ch; }
@@ -178,6 +227,7 @@ li.fresh .r { color: #fff; }
         <div class="pip" id="p3" hidden><b>TAP 3</b><span>—</span></div>
       </div>
       <div class="topr">
+        <button class="ico" id="quitBtn" type="button" aria-label="Quit to home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.5h4V20"/></svg></button>
         <button class="ico" id="fsBtn" type="button" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
         <button class="ico" id="muteBtn" type="button" aria-label="Sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
         <div class="best"><b id="hudBestK">BEST</b><span id="hudBest">—</span></div>
@@ -206,14 +256,6 @@ li.fresh .r { color: #fff; }
     <div>
       <h1 class="logo" id="mTitle">Tap<br><em>Athletics</em></h1>
       <p class="byline" id="byline">by Brooky</p>
-      <div id="mIntro">
-        <p class="sub"><b>Olympics:</b> play all five events in a row (100m, long jump, high jump, 400m, javelin) and score points, decathlon style.</p>
-        <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
-        <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
-        <p class="sub"><b>400m:</b> tap left, right, left, right with an even rhythm (tap along to the beat). Find a steady pace: too slow loses speed, too fast burns your stamina and you tie up before the line.</p>
-        <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
-        <p class="sub"><b>Long jump:</b> hold for exactly one second, then let go to start. Tap fast when TAP! flashes, then press right at the board and hold while the arrow rises. Let go at the perfect angle.</p>
-      </div>
       <div id="mResults" hidden>
         <div class="stats">
           <div class="stat"><b id="rK1">BEST</b><div id="rV1">—</div></div>
@@ -223,8 +265,15 @@ li.fresh .r { color: #fff; }
         <div class="series" id="rSeries"></div>
       </div>
       <p class="tip" id="iosTip" hidden>For full screen on iPhone: tap Share, then Add to Home Screen, and play from the new icon.</p>
-      <label class="name" for="pname">PLAYER <input id="pname" maxlength="14" value="Player" autocomplete="off"></label>
-      <div class="events">
+      <div class="resbtns" id="resBtns" hidden>
+        <button class="play" id="againBtn" type="button">PLAY AGAIN</button>
+        <button class="play home" id="homeBtn" type="button">HOME</button>
+      </div>
+      <div class="homerow" id="nameRow">
+        <label class="name" for="pname">PLAYER <input id="pname" maxlength="14" value="Player" autocomplete="off"></label>
+        <button class="howbtn" id="howBtn" type="button">HOW TO PLAY</button>
+      </div>
+      <div class="events" id="events">
         <button class="play oly" id="playOly" type="button">OLYMPICS</button>
         <button class="play alt" id="playSprint" type="button">100M</button>
         <button class="play lj" id="playLj" type="button">LONG JUMP</button>
@@ -250,7 +299,7 @@ li.fresh .r { color: #fff; }
       <ol id="listR4" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.5</p>
+      <p class="ver">Version 3.6</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -264,6 +313,21 @@ li.fresh .r { color: #fff; }
         <p class="adminMsg" id="adminMsg" hidden></p>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="howto" id="howto" hidden>
+  <div class="howcard" role="dialog" aria-labelledby="howTitle">
+    <h2 id="howTitle">How to play</h2>
+    <div class="howsubs" id="mIntro">
+        <p class="sub"><b>Olympics:</b> play all five events in a row (100m, long jump, high jump, 400m, javelin) and score points, decathlon style.</p>
+        <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
+        <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
+        <p class="sub"><b>400m:</b> tap left, right, left, right with an even rhythm (tap along to the beat). Find a steady pace: too slow loses speed, too fast burns your stamina and you tie up before the line.</p>
+        <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
+        <p class="sub"><b>Long jump:</b> hold for exactly one second, then let go to start. Tap fast when TAP! flashes, then press right at the board and hold while the arrow rises. Let go at the perfect angle.</p>
+    </div>
+    <button class="play" id="howClose" type="button">GOT IT</button>
   </div>
 </div>
 
@@ -379,9 +443,12 @@ li.fresh .r { color: #fff; }
   }
   function showMenu(results) {
     state = "menu"; $("toast").hidden = true; $("olyTag").hidden = true;
+    $("raise").hidden = true; $("go").classList.remove("held"); setCue(false); sfx.musicStop();
     const isOly = results === "oly";
-    $("mIntro").hidden = !!results; $("byline").hidden = !!results; $("mResults").hidden = !results;
-    $("mTitle").innerHTML = !results ? "Tap<br><em>Athletics</em>" : isOly ? "Olympics<br><em>Results</em>" : mode === "sprint" ? "Race<br><em>Results</em>" : "Final<br><em>Results</em>";
+    $("howto").hidden = true; $("byline").hidden = !!results; $("mResults").hidden = !results;
+    $("events").hidden = !!results; $("nameRow").hidden = !!results; $("resBtns").hidden = !results; $("iosTip").hidden = !!results || !showIosTip;
+    $("menu").classList.toggle("results", !!results); $("mTitle").classList.toggle("small", !!results);
+    $("mTitle").innerHTML = !results ? "Tap<br><em>Athletics</em>" : (isOly ? "Olympics" : mode === "sprint" || mode === "r400" ? "Race" : "Final") + " <em>Results</em>";
     const set = (i, k, v) => { $("rK" + i).textContent = k; $("rV" + i).textContent = v; };
     const m = v => v === null || v === undefined ? "—" : v.toFixed(2) + " m";
     if (isOly) {
@@ -572,9 +639,15 @@ li.fresh .r { color: #fff; }
   setupAdmin();
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
+  let lastGo = null, showIosTip = false;
   [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playR4", () => start400()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
-    $(id).addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); OLY.active = false; go(); });
+    $(id).addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); OLY.active = false; lastGo = go; go(); });
   });
+  $("againBtn").addEventListener("click", () => { sfx.unlock(); OLY.active = false; if (lastGo) lastGo(); else showMenu(false); });
+  $("homeBtn").addEventListener("click", () => showMenu(false));
+  $("howBtn").addEventListener("click", () => { $("howto").hidden = false; $("howClose").focus(); });
+  $("howClose").addEventListener("click", () => { $("howto").hidden = true; $("howBtn").focus(); });
+  $("howto").addEventListener("click", e => { if (e.target === $("howto")) $("howto").hidden = true; });
 
   // ---------- full screen + sound buttons
   const fsEl = document.documentElement;
@@ -590,10 +663,18 @@ li.fresh .r { color: #fff; }
     if (isFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else goFullscreen();
   });
   const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone;
-  $("iosTip").hidden = !(/iPhone|iPod/.test(navigator.userAgent) && !standalone && !fsSupported);
+  showIosTip = /iPhone|iPod/.test(navigator.userAgent) && !standalone && !fsSupported;
+  $("iosTip").hidden = !showIosTip;
   function paintMute() { $("muteBtn").classList.toggle("muted", sfx.muted); $("muteBtn").setAttribute("aria-label", sfx.muted ? "Sound off" : "Sound on"); }
   $("muteBtn").addEventListener("click", () => { sfx.toggle(); paintMute(); });
-  ["fsBtn", "muteBtn"].forEach(id => $(id).addEventListener("pointerdown", e => e.stopPropagation()));
+  ["fsBtn", "muteBtn", "quitBtn"].forEach(id => $(id).addEventListener("pointerdown", e => e.stopPropagation()));
+  let quitT;
+  $("quitBtn").addEventListener("click", () => { // two taps so a stray thumb doesn't end the event
+    const b = $("quitBtn");
+    if (!b.classList.contains("arm")) { b.classList.add("arm"); quitT = setTimeout(() => b.classList.remove("arm"), 2500); return; }
+    clearTimeout(quitT); b.classList.remove("arm");
+    OLY.active = false; showMenu(false);
+  });
   $("portraitOk").addEventListener("click", () => document.body.classList.add("portrait-ok"));
 
 
@@ -611,7 +692,7 @@ li.fresh .r { color: #fff; }
       return true;
     }
     const ok = () => ac && !muted;
-    let mus = null;
+    let mus = null, crowd = null;
     const RIFF = [0, 0, 7, 0, 10, 7, 12, 10];
     function beat(i, t) {
       if (!ok()) return;
@@ -734,6 +815,23 @@ li.fresh .r { color: #fff; }
           while (mus.next < ac.currentTime + .15) { beat(mus.step, mus.next); mus.next += mus.iv; mus.step++; }
         }, 25);
       },
+      crowdLevel(l) {
+        if (!ac) return;
+        if (!crowd) {
+          if (l <= 0) return;
+          const src = ac.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+          const f1 = ac.createBiquadFilter(); f1.type = "bandpass"; f1.frequency.value = 650; f1.Q.value = .5;
+          const f2 = ac.createBiquadFilter(); f2.type = "lowpass"; f2.frequency.value = 2000;
+          const mod = ac.createGain(); mod.gain.value = .8;
+          const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .17; lg.gain.value = .2; lfo.connect(lg); lg.connect(mod.gain);
+          const lfo2 = ac.createOscillator(), lg2 = ac.createGain(); lfo2.frequency.value = .41; lg2.gain.value = 120; lfo2.connect(lg2); lg2.connect(f1.frequency);
+          const g = ac.createGain(); g.gain.value = 0;
+          src.connect(f1); f1.connect(f2); f2.connect(mod); mod.connect(g); g.connect(master);
+          src.start(); lfo.start(); lfo2.start();
+          crowd = { g, level: -1 };
+        }
+        if (crowd.level !== l) { crowd.level = l; crowd.g.gain.setTargetAtTime(l, ac.currentTime, l < crowd.g.gain.value ? .35 : .9); }
+      },
       musicStop() { if (mus) { clearInterval(mus.timer); mus = null; } },
       musicIntense(on) { if (mus) mus.intense = on; },
       stumble() {
@@ -787,6 +885,7 @@ li.fresh .r { color: #fff; }
     for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * spread, vy: Math.random() * spread * .6, life: 1, r: .12 + Math.random() * .2, col });
   }
   function update(dt) {
+    sfx.crowdLevel(state === "menu" ? 0 : /^(smarks|sset|r4marks|r4set)$/.test(state) ? .012 : .05);
     if (mode !== "r400" || (state !== "r4gun" && state !== "r4race")) sfx.musicStop();
     time += dt;
     if (mode === "sprint") { sprintUpdate(dt); return; }
