@@ -196,7 +196,7 @@ li.fresh .r { color: #fff; }
       <ol id="listLj" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 2.6</p>
+      <p class="ver">Version 2.7</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -1013,6 +1013,7 @@ li.fresh .r { color: #fff; }
     J.dist = Math.max(0, Math.round(J.landX * 100) / 100);
     J.h = J.jumpLen * Math.tan(Math.max(4, th) * Math.PI / 180) / 4;
     J.flightDur = 0.55 + J.jumpLen * 0.08; J.flightT = 0;
+    jsay("ANGLE " + Math.round(th) + "°");
     state = "lflight"; J.landT = 0; $("go").classList.remove("held"); setCue(false); setGo(""); setPrompt(""); sfx.grunt();
   }
   function ljFoul() {
@@ -1194,6 +1195,11 @@ li.fresh .r { color: #fff; }
       ctx.fillStyle = "#ffcd2e"; ctx.strokeStyle = "#1b2340"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(ex + Math.cos(a) * hl * .6, ey - Math.sin(a) * hl * .6);
       ctx.lineTo(ex + Math.cos(a + 2.4) * hl, ey - Math.sin(a + 2.4) * hl); ctx.lineTo(ex + Math.cos(a - 2.4) * hl, ey - Math.sin(a - 2.4) * hl); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // live angle readout beside the arrow tip
+      const deg = Math.round(J.ang) + "°", tx = ex + Math.cos(a) * hl * 1.6 + 6, ty = ey - Math.sin(a) * hl * 1.6 - 4;
+      ctx.font = Math.round(Math.max(20, ppm * .7)) + "px 'Lilita One', Impact, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.fillStyle = "#fff";
+      ctx.strokeText(deg, tx, ty); ctx.fillText(deg, tx, ty);
     }
     // dust / sand
     parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .75; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), base - p.y * ppm, p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
