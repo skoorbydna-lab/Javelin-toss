@@ -155,6 +155,8 @@ canvas { display: block; width: 100%; height: 100%; }
 .play.hj { background: #7c5cff; color: #fff; box-shadow: 0 6px 0 #5a3fd1; }
 .play.hj:active { box-shadow: 0 2px 0 #5a3fd1; }
 .events .play:last-child:nth-child(even) { grid-column: 1 / -1; }
+.play.hu { background: #2a64e0; color: #fff; box-shadow: 0 6px 0 #1a429a; }
+.play.hu:active { box-shadow: 0 2px 0 #1a429a; }
 .play.r4 { background: #ff9f43; color: var(--ink); box-shadow: 0 6px 0 #c76f16; }
 .play.r4:active { box-shadow: 0 2px 0 #c76f16; }
 .cb { font-family: var(--body); font-weight: 800; font-size: 11px; color: #9fb0e0; }
@@ -267,6 +269,7 @@ li.fresh .r { color: #fff; }
       <div class="events" id="events">
         <button class="play oly" id="playOly" type="button">OLYMPICS</button>
         <button class="play alt" id="playSprint" type="button">100M</button>
+        <button class="play hu" id="playHu" type="button">HURDLES</button>
         <button class="play lj" id="playLj" type="button">LONG JUMP</button>
         <button class="play hj" id="playHj" type="button">HIGH JUMP</button>
         <button class="play r4" id="playR4" type="button">400M</button>
@@ -277,6 +280,7 @@ li.fresh .r { color: #fff; }
       <div class="tabs" role="tablist">
         <button class="tab on" id="tabOly" type="button" role="tab" aria-selected="true">Olympics</button>
         <button class="tab" id="tabSpr" type="button" role="tab" aria-selected="false">100m</button>
+        <button class="tab" id="tabHu" type="button" role="tab" aria-selected="false">Hurdles</button>
         <button class="tab" id="tabLj" type="button" role="tab" aria-selected="false">Long jump</button>
         <button class="tab" id="tabHj" type="button" role="tab" aria-selected="false">High jump</button>
         <button class="tab" id="tabR4" type="button" role="tab" aria-selected="false">400m</button>
@@ -288,9 +292,10 @@ li.fresh .r { color: #fff; }
       <ol id="listLj" hidden></ol>
       <ol id="listHj" hidden></ol>
       <ol id="listR4" hidden></ol>
+      <ol id="listHu" hidden></ol>
       <ol id="list" hidden></ol>
       <p class="empty" id="empty">No records yet. Be the first!</p>
-      <p class="ver">Version 3.7</p>
+      <p class="ver">Version 3.8</p>
       <div class="admin">
         <button class="ghost" id="adminBtn" type="button">Owner sign-in</button>
         <span id="adminPanel" hidden>
@@ -299,6 +304,7 @@ li.fresh .r { color: #fff; }
           <button class="ghost" id="resetLj" type="button">Reset long jump</button>
           <button class="ghost" id="resetHj" type="button">Reset high jump</button>
           <button class="ghost" id="resetR4" type="button">Reset 400m</button>
+          <button class="ghost" id="resetHu" type="button">Reset hurdles</button>
           <button class="ghost" id="resetThrow" type="button">Reset javelin</button>
         </span>
         <p class="adminMsg" id="adminMsg" hidden></p>
@@ -311,9 +317,10 @@ li.fresh .r { color: #fff; }
   <div class="howcard" role="dialog" aria-labelledby="howTitle">
     <h2 id="howTitle">How to play</h2>
     <div class="howsubs" id="mIntro">
-        <p class="sub"><b>Olympics:</b> play all five events in a row (100m, long jump, high jump, 400m, javelin) and score points, decathlon style.</p>
+        <p class="sub"><b>Olympics:</b> play all six events in a row (100m, long jump, high jump, 400m, 110m hurdles, javelin) and score points, decathlon style.</p>
         <p class="sub"><b>Javelin:</b> tap to run, hold to raise the javelin, let go to throw. Faster and later is further, but don't cross the line!</p>
         <p class="sub"><b>100m:</b> tap the instant the gun fires, then tap each time TAP! flashes. Quicker reactions give bigger bursts of speed. Tap too early and it's a false start!</p>
+        <p class="sub"><b>110m hurdles:</b> react to the gun, then tap to jump each of the 10 hurdles. Take off in the green zone for a perfect jump and a small burst of speed. Jump badly and you clip the hurdle and slow down.</p>
         <p class="sub"><b>400m:</b> tap left, right, left, right with an even rhythm (tap along to the beat). Find a steady pace: too slow loses speed, too fast burns your stamina and you tie up before the line.</p>
         <p class="sub"><b>High jump:</b> for each of the 4 run-up steps, hold and let go when the bar hits 100%. Do the same on the take-off power bar, then tap when the shrinking circle turns solid green at the top of the leap to arch over. Miss that tap and the bar comes down. Three tries at each height.</p>
         <p class="sub"><b>Long jump:</b> hold for exactly one second, then let go to start. Tap fast when TAP! flashes, then press right at the board and hold while the arrow rises. Let go at the perfect angle.</p>
@@ -367,9 +374,9 @@ li.fresh .r { color: #fff; }
   function avg() { return throws.length ? throws.reduce((s, t) => s + (t || 0), 0) / throws.length : null; }
   function renderRecTag() {
     const el = $("recTag");
-    const b = { sprint: "spr", longjump: "lj", highjump: "hj", r400: "r4", javelin: "jav" }[mode];
+    const b = { sprint: "spr", longjump: "lj", highjump: "hj", r400: "r4", hurdles: "hu", javelin: "jav" }[mode];
     if (state === "menu" || !b || typeof entries !== "function") { el.hidden = true; return; }
-    const val = d => b === "hj" ? fmtH(hjDecode(d).h) + " m" : b === "spr" || b === "r4" ? Number(d).toFixed(2) + " s" : Number(d).toFixed(2) + " m";
+    const val = d => b === "hj" ? fmtH(hjDecode(d).h) + " m" : b === "spr" || b === "r4" || b === "hu" ? Number(d).toFixed(2) + " s" : Number(d).toFixed(2) + " m";
     const pb = personalBest(b), top = entries(b)[0];
     el.innerHTML = "<b>PB</b> " + (pb === null ? "—" : val(pb)) + "  ·  <b class=\"wr\">WR</b> " + (top ? val(top.d) + " " : "—");
     if (top) el.appendChild(document.createTextNode(top.n));
@@ -378,10 +385,11 @@ li.fresh .r { color: #fff; }
   function renderHud() {
     renderRecTag();
     $("olyTag").hidden = !OLY.active;
-    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 5: 100M" : mode === "longjump" ? "EVENT 2 OF 5: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 5: HIGH JUMP" : mode === "r400" ? "EVENT 4 OF 5: 400M" : "EVENT 5 OF 5: JAVELIN");
-    $("p3").hidden = mode !== "sprint";
+    if (OLY.active) $("olyTag").textContent = "OLYMPICS  ·  " + (mode === "sprint" ? "EVENT 1 OF 6: 100M" : mode === "longjump" ? "EVENT 2 OF 6: LONG JUMP" : mode === "highjump" ? "EVENT 3 OF 6: HIGH JUMP" : mode === "r400" ? "EVENT 4 OF 6: 400M" : mode === "hurdles" ? "EVENT 5 OF 6: 110M HURDLES" : "EVENT 6 OF 6: JAVELIN");
+    $("p3").hidden = mode !== "sprint" && mode !== "hurdles";
     if (mode === "highjump") { renderHjHud(); return; }
     if (mode === "r400") { renderR4Hud(); return; }
+    if (mode === "hurdles") { renderHuHud(); return; }
     if (mode === "sprint") { renderSprintHud(); return; }
     $("hudBestK").textContent = "BEST";
     for (let i = 0; i < 3; i++) $("p" + i).querySelector("b").textContent = (mode === "longjump" ? "JUMP " : "THROW ") + (i + 1);
@@ -450,7 +458,7 @@ li.fresh .r { color: #fff; }
     $("howto").hidden = true; $("byline").hidden = !!results; $("mResults").hidden = !results;
     $("events").hidden = !!results; $("nameRow").hidden = !!results; $("resBtns").hidden = !results; $("iosTip").hidden = !!results || !showIosTip;
     $("menu").classList.toggle("results", !!results); $("mTitle").classList.toggle("small", !!results);
-    $("mTitle").innerHTML = !results ? "Tap<br><em>Athletics</em>" : (isOly ? "Olympics" : mode === "sprint" || mode === "r400" ? "Race" : "Final") + " <em>Results</em>";
+    $("mTitle").innerHTML = !results ? "Tap<br><em>Athletics</em>" : (isOly ? "Olympics" : mode === "sprint" || mode === "r400" || mode === "hurdles" ? "Race" : "Final") + " <em>Results</em>";
     const set = (i, k, v) => { $("rK" + i).textContent = k; $("rV" + i).textContent = v; };
     const m = v => v === null || v === undefined ? "—" : v.toFixed(2) + " m";
     if (isOly) {
@@ -460,12 +468,19 @@ li.fresh .r { color: #fff; }
         "Long jump: " + (r.lj !== null ? r.lj.toFixed(2) + " m" : "no jump") + "  →  " + p.lj + " pts\n" +
         "High jump: " + (r.hj !== null ? fmtH(r.hj) + " m" : "no height") + "  →  " + p.hj + " pts\n" +
         "400m: " + (r.r4 ? r.r4.toFixed(2) + " s" : "DQ") + "  →  " + p.r4 + " pts\n" +
+        "110m hurdles: " + (r.hu ? r.hu.toFixed(2) + " s" : "DQ") + "  →  " + p.hu + " pts\n" +
         "Javelin: " + (r.jav !== null ? r.jav.toFixed(2) + " m" : "no throw") + "  →  " + p.jav + " pts";
     } else if (results && mode === "sprint") {
       set(1, "TIME", S.dq ? "DQ" : S.time.toFixed(2) + " s");
       set(2, "PLACE", S.dq ? "—" : ["1st", "2nd", "3rd", "4th"][S.place - 1]);
       set(3, "YOUR BEST", lastPB === null ? "—" : lastPB.toFixed(2) + " s");
       $("rSeries").textContent = S.dq ? "False start: disqualified" : "Reactions: " + S.rts.map(r => r === null ? "miss" : r.toFixed(2)).join("  ·  ");
+    } else if (results && mode === "hurdles") {
+      const n = k => HU.grades.filter(g => g === k).length;
+      set(1, "TIME", HU.dq ? "DQ" : HU.time.toFixed(2) + " s");
+      set(2, "PLACE", HU.dq ? "—" : ["1st", "2nd", "3rd", "4th"][HU.place - 1]);
+      set(3, "YOUR BEST", lastPB === null ? "—" : lastPB.toFixed(2) + " s");
+      $("rSeries").textContent = HU.dq ? "False start: disqualified" : "Reaction " + HU.rt.toFixed(2) + "  ·  Perfect " + n("P") + "  ·  Good " + n("G") + "  ·  OK " + n("O") + "  ·  Hit " + (n("H") + n("N"));
     } else if (results && mode === "r400") {
       set(1, "TIME", R4.dq ? "DQ" : R4.time.toFixed(2) + " s");
       set(2, "PLACE", R4.dq ? "—" : ["1st", "2nd", "3rd", "4th"][R4.place - 1]);
@@ -492,22 +507,23 @@ li.fresh .r { color: #fff; }
     lj: m => m ? Math.floor(0.14354 * Math.pow(Math.max(0, m * 100 - 220), 1.4)) : 0,
     hj: h => h ? Math.floor(0.8465 * Math.pow(Math.max(0, h * 100 - 75), 1.42)) : 0,
     r4: t => t ? Math.floor(1.53775 * Math.pow(Math.max(0, 82 - t), 1.81)) : 0,
+    hu: t => t ? Math.floor(5.74352 * Math.pow(Math.max(0, 28.5 - t), 1.92)) : 0,
     jav: m => m ? Math.floor(10.14 * Math.pow(Math.max(0, m - 7), 1.08)) : 0
   };
-  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, hj: null, r4: null, jav: null }; startSprint(); }
+  function startOlympics() { OLY.active = true; OLY.res = { spr: null, lj: null, hj: null, r4: null, hu: null, jav: null }; startSprint(); }
   function olyFinish() {
     const r = OLY.res;
-    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), hj: POINTS.hj(r.hj), r4: POINTS.r4(r.r4), jav: POINTS.jav(r.jav) };
-    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.hj + OLY.pts.r4 + OLY.pts.jav;
+    OLY.pts = { spr: POINTS.spr(r.spr), lj: POINTS.lj(r.lj), hj: POINTS.hj(r.hj), r4: POINTS.r4(r.r4), hu: POINTS.hu(r.hu), jav: POINTS.jav(r.jav) };
+    OLY.total = OLY.pts.spr + OLY.pts.lj + OLY.pts.hj + OLY.pts.r4 + OLY.pts.hu + OLY.pts.jav;
     OLY.rank = boardPos("oly", OLY.total);
     const sub = submit("oly", OLY.total); OLY.pb = sub.best;
     OLY.active = false; tab = "oly";
     showMenu("oly");
-    sfx.cheer(Math.min(1, OLY.total / 5400), sub.improved && OLY.rank === 1);
+    sfx.cheer(Math.min(1, OLY.total / 6400), sub.improved && OLY.rank === 1);
   }
 
   // ---------- records: one best score per player on each board (Firebase, with a this-device fallback)
-  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics", KEY_HJ = KEY + "-highjump", KEY_R4 = KEY + "-400m";
+  const KEY_SPR = KEY + "-sprint", KEY_LJ = KEY + "-longjump", KEY_OLY = KEY + "-olympics", KEY_HJ = KEY + "-highjump", KEY_R4 = KEY + "-400m", KEY_HU = KEY + "-hurdles";
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyDv3JfyJWQ6BFJ03WQIK4OJ4OnQWNY5uNo",
     authDomain: "javelin-toss-fe81d.firebaseapp.com",
@@ -520,12 +536,13 @@ li.fresh .r { color: #fff; }
     oly: { key: KEY_OLY, coll: "olympics", asc: false, list: "listOly", tabEl: "tabOly", reset: "resetOly", label: "Olympics", fmt: d => String(Math.round(d)), empty: "Play Olympics mode to post a points total." },
     spr: { key: KEY_SPR, coll: "sprints", asc: true, list: "listSpr", tabEl: "tabSpr", reset: "resetSpr", label: "100m", fmt: d => d.toFixed(2), empty: "No races yet. Be the first!" },
     lj: { key: KEY_LJ, coll: "longjumps", asc: false, list: "listLj", tabEl: "tabLj", reset: "resetLj", label: "long jump", fmt: d => d.toFixed(2), empty: "No jumps yet. Be the first!" },
+    hu: { key: KEY_HU, coll: "hurdles", asc: true, list: "listHu", tabEl: "tabHu", reset: "resetHu", label: "110m hurdles", fmt: d => d.toFixed(2), empty: "No hurdles races yet. Be the first!" },
     r4: { key: KEY_R4, coll: "r400s", asc: true, list: "listR4", tabEl: "tabR4", reset: "resetR4", label: "400m", fmt: d => d.toFixed(2), empty: "No 400m races yet. Be the first!" },
     hj: { key: KEY_HJ, coll: "highjumps", asc: false, list: "listHj", tabEl: "tabHj", reset: "resetHj", label: "high jump", fmt: hjFmt, empty: "No heights cleared yet. Be the first!" },
     jav: { key: KEY, coll: "throws", asc: false, list: "list", tabEl: "tabThrow", reset: "resetThrow", label: "javelin", fmt: d => d.toFixed(2), empty: "No throws yet. Be the first!" }
   };
   let anyOk = false, tab = "oly", fdb = null, online = false, netErr = "", lastPB = null;
-  const remote = { oly: [], spr: [], lj: [], hj: [], r4: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, hj: null, r4: null, jav: null };
+  const remote = { oly: [], spr: [], lj: [], hj: [], r4: [], hu: [], jav: [] }, freshName = { oly: null, spr: null, lj: null, hj: null, r4: null, hu: null, jav: null };
   const atLeast = (b, a, c) => BOARDS[b].asc ? a <= c : a >= c;
   const beats = (b, a, c) => BOARDS[b].asc ? a < c : a > c;
 
@@ -643,7 +660,7 @@ li.fresh .r { color: #fff; }
   try { const n = localStorage.getItem(KEY + "-name"); if (n) $("pname").value = n; } catch (_) {}
   $("pname").addEventListener("change", () => { try { localStorage.setItem(KEY + "-name", $("pname").value.trim()); } catch (_) {} });
   let lastGo = null, showIosTip = false;
-  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playR4", () => start400()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
+  [["play", () => startGame()], ["playSprint", () => startSprint()], ["playLj", () => startLJ()], ["playHj", () => startHJ()], ["playR4", () => start400()], ["playHu", () => startHurdles()], ["playOly", () => startOlympics()]].forEach(([id, go]) => {
     $(id).addEventListener("click", () => { sfx.unlock(); if (matchMedia("(pointer: coarse)").matches) goFullscreen(); OLY.active = false; lastGo = go; go(); });
   });
   $("againBtn").addEventListener("click", () => { sfx.unlock(); OLY.active = false; if (lastGo) lastGo(); else showMenu(false); });
@@ -863,6 +880,7 @@ li.fresh .r { color: #fff; }
     if (mode === "longjump") { ljPress(); return; }
     if (mode === "highjump") { hjPress(); return; }
     if (mode === "r400") { r4Press(); return; }
+    if (mode === "hurdles") { huPress(); return; }
     if (state === "ready") startRun();
     else if (state === "running") startCharge();
     else if (state === "landed") { if (throws.length < 3) newThrow(); else if (OLY.active) olyFinish(); else showMenu(true); }
@@ -888,13 +906,14 @@ li.fresh .r { color: #fff; }
     for (let i = 0; i < n; i++) parts.push({ x, y, vx: (Math.random() - .5) * spread, vy: Math.random() * spread * .6, life: 1, r: .12 + Math.random() * .2, col });
   }
   function update(dt) {
-    sfx.crowdLevel(state === "menu" ? 0 : /^(smarks|sset|r4marks|r4set)$/.test(state) ? .012 : .05);
+    sfx.crowdLevel(state === "menu" ? 0 : /^(smarks|sset|r4marks|r4set|humarks|huset)$/.test(state) ? .012 : .05);
     if (mode !== "r400" || (state !== "r4gun" && state !== "r4race")) sfx.musicStop();
     time += dt;
     if (mode === "sprint") { sprintUpdate(dt); return; }
     if (mode === "longjump") { ljUpdate(dt); return; }
     if (mode === "highjump") { hjUpdate(dt); return; }
     if (mode === "r400") { r4Update(dt); return; }
+    if (mode === "hurdles") { huUpdate(dt); return; }
     if (state === "running" || state === "charging") {
       aSpeed += ACC * dt; ax += aSpeed * dt;
       const si = Math.floor(ax * 2.3 / Math.PI); if (si !== stepIdx) { stepIdx = si; sfx.step(aSpeed); }
@@ -1808,12 +1827,12 @@ li.fresh .r { color: #fff; }
   function r4FalseStart() {
     R4.dq = true; state = "r4done"; setGo(""); setPrompt(""); shake = .25; sfx.groan();
     lastPB = personalBest("r4"); if (OLY.active) OLY.res.r4 = null;
-    showToast("FALSE START!", "Disqualified", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
+    showToast("FALSE START!", "Disqualified", OLY.active ? "TAP FOR THE HURDLES" : "TAP FOR RESULTS", true);
   }
   function r4Press() { // the start sequence and the end use plain taps; racing uses left/right (see r4Tap)
     if (state === "r4ready") { state = "r4marks"; R4.timer = 0; setPrompt("ON YOUR MARKS"); setGo(""); }
     else if (state === "r4marks" || state === "r4set") r4FalseStart();
-    else if (state === "r4done") { if (OLY.active) startGame(); else showMenu(true); }
+    else if (state === "r4done") { if (OLY.active) startHurdles(); else showMenu(true); }
   }
   function r4Tap(side) {
     if (state === "r4gun" || state === "r4race") {
@@ -1841,7 +1860,7 @@ li.fresh .r { color: #fff; }
     lastPB = submit("r4", time).best; tab = OLY.active ? "oly" : "r4";
     if (OLY.active) OLY.res.r4 = time;
     const word = rec ? "NEW RECORD!" : R4.place === 1 ? "WINNER!" : ["", "", "2ND PLACE", "3RD PLACE", "4TH PLACE"][R4.place];
-    showToast(word, time.toFixed(2) + " s", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS");
+    showToast(word, time.toFixed(2) + " s", OLY.active ? "TAP FOR THE HURDLES" : "TAP FOR RESULTS");
     if (R4.cons !== null) { $("tStats").innerHTML = "RHYTHM CONSISTENCY <b>" + (R4.cons * 100).toFixed(1) + "%</b>"; $("tStats").hidden = false; }
     setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (60 - time) / 14)), rec), 120);
     renderHud();
@@ -2052,6 +2071,229 @@ li.fresh .r { color: #fff; }
     if (R4.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (R4.flash * 3).toFixed(2) + ")"; ctx.fillRect(-20, -20, W + 40, H + 40); }
   }
 
+  // ---------- 110m hurdles
+  // React to the gun, then tap to jump each of the 10 hurdles. Take off about 2.1 m before a hurdle:
+  // perfect or good timing gives a small speed boost, a bad jump clips the hurdle and slows you down,
+  // and no jump at all means running through it.
+  const HUK = { VMAX: 8.7, START_B: 1.6, DECAY: 1.6, PERF: .7, GOOD: .35, HITV: .85, NOJUMPV: .72, MAXB: 2.2, IDEAL: 2.1, FLIGHT: 3.4, LIFT: .5, GUN_WAIT: 1.0, HH: 1.067 };
+  const HU_POS = [...Array(10)].map((_, i) => 13.72 + 9.14 * i);
+  const HU_KITS = ["#e8443a", "#f2b21b", "#8a4fd8"];
+  const HUP = { hip: [0, .98], sh: [.42, 1.38], head: [.58, 1.55], kA: [.45, 1.02], fA: [.95, .98], kB: [.02, .78], fB: [-.42, .92], hA: [.92, 1.3], hB: [-.05, 1.05] };
+  const HU = { x: 0, v: 0, b: 0, t: 0, go: 0, started: false, timer: 0, setDelay: 1.5, ni: 0, jump: null, knocked: [], grades: [], rt: null, rivals: [], time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0, frameAt: 0 };
+  function huGrade(d) { const e = Math.abs(d - HUK.IDEAL); return e < .3 ? "P" : e < .7 ? "G" : e < 1.1 ? "O" : "H"; }
+  const HU_WORD = { P: "PERFECT!", G: "GOOD", O: "OK", H: "CLIPPED!", N: "NO JUMP!" };
+  const HUGHOST = (() => { // one standard race (0.2 s start, every hurdle "good"), stretched to each ghost's time
+    const dt = 1 / 120, xs = [], go = .2; let t = 0, x = 0, v = 0, b = HUK.START_B * quick(.2), i = 0, T = null, after = 0;
+    while (after < 2) {
+      if (t >= go && T === null) {
+        if (i < 10 && x >= HU_POS[i] - HUK.IDEAL) { b = Math.min(HUK.MAXB, b + HUK.GOOD); i++; }
+        v += (HUK.VMAX + b - v) / ((t - go) < 2.5 ? .9 : .5) * dt; b *= Math.exp(-dt / HUK.DECAY);
+      } else if (T !== null) { v = Math.max(0, v - 5 * dt); after += dt; }
+      const px = x; x += v * dt; t += dt;
+      if (T === null && x >= 110) T = t - dt + dt * (110 - px) / (x - px);
+      xs.push(x);
+    }
+    return { dt, xs, T, start: go };
+  })();
+  function huSay(t) { HU.msg = t; HU.msgT = 1.1; }
+  function startHurdles() {
+    mode = "hurdles"; freshName.hu = null;
+    $("menu").hidden = true; $("toast").hidden = true; setCue(false);
+    Object.assign(HU, { x: 0, v: 0, b: 0, t: 0, go: 0, started: false, timer: 0, ni: 0, jump: null, knocked: [], grades: [], rt: null, time: null, place: 0, dq: false, msg: "", msgT: 0, flash: 0 });
+    const top = entries("hu"), seen = new Set(top.map(r => nameKey(r.n)));
+    const board = top.slice(0, 3).map(r => ({ name: r.n, T: Number(r.d) }));
+    const cpuNames = ["Dash", "Bolt-bot", "Zippy", "Rocket", "Blur"].filter(n => !seen.has(n.toLowerCase()));
+    const cpuTimes = [13.0, 13.5, 14.1];
+    while (board.length < 3) board.push({ name: cpuNames.shift(), T: Math.round((cpuTimes[board.length] + rand(-.15, .15)) * 100) / 100 });
+    HU.rivals = board.slice().reverse().map((g, i) => ({ kit: HU_KITS[i], name: g.name, T: g.T, x: 0, v: 0, started: false }));
+    parts = []; stepIdx = 0; aSpeed = 0;
+    state = "huready"; setPrompt("TAP TO GO TO YOUR MARKS", true); setGo("GO"); renderHud();
+  }
+  function huFalseStart() {
+    HU.dq = true; state = "hudone"; setGo(""); setPrompt(""); shake = .25; sfx.groan();
+    lastPB = personalBest("hu"); if (OLY.active) OLY.res.hu = null;
+    showToast("FALSE START!", "Disqualified", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS", true);
+  }
+  function huGo(rt) {
+    HU.started = true; HU.rt = rt; HU.go = Math.max(rt, .1); HU.b = HUK.START_B * quick(rt);
+    state = "hurace"; setCue(false); setGo(""); setPrompt("TAP TO JUMP EACH HURDLE");
+    huSay(reactWord(rt) + "  " + rt.toFixed(2)); renderHud();
+  }
+  function huResolve(g) { // apply the jump result at the current hurdle
+    HU.grades.push(g);
+    if (g === "P") HU.b = Math.min(HUK.MAXB, HU.b + HUK.PERF);
+    else if (g === "G") HU.b = Math.min(HUK.MAXB, HU.b + HUK.GOOD);
+    else if (g === "H" || g === "N") {
+      HU.v *= g === "H" ? HUK.HITV : HUK.NOJUMPV; HU.b = 0; HU.knocked[HU.ni] = 0;
+      sfx.clang(); shake = .15;
+    }
+    huSay(HU_WORD[g]); HU.ni++; renderHud();
+  }
+  function huPress() {
+    if (state === "huready") { state = "humarks"; HU.timer = 0; setPrompt("ON YOUR MARKS"); setGo(""); }
+    else if (state === "humarks" || state === "huset") huFalseStart();
+    else if (state === "hugun") huGo(HU.t);
+    else if (state === "hurace" && HU.time === null && !HU.jump && HU.ni < 10) {
+      const xNow = HU.x + HU.v * Math.max(0, (performance.now() - HU.frameAt) / 1000);
+      const d = HU_POS[HU.ni] - xNow;
+      if (d > 4.2 || d < .45) return; // too far away to jump yet
+      HU.jump = { x0: xNow }; sfx.tick(); setPrompt("");
+      huResolve(huGrade(d));
+    }
+    else if (state === "hudone") { if (OLY.active) startGame(); else showMenu(true); }
+  }
+  function huFinish() {
+    state = "hudone"; setPrompt(""); setGo("");
+    const time = Math.round(HU.time * 100) / 100; HU.time = time;
+    HU.place = 1 + HU.rivals.filter(r => r.T < time).length;
+    const rec = rankOf("hu", time) === 0;
+    lastPB = submit("hu", time).best; tab = OLY.active ? "oly" : "hu";
+    if (OLY.active) OLY.res.hu = time;
+    const word = rec ? "NEW RECORD!" : HU.place === 1 ? "WINNER!" : ["", "", "2ND PLACE", "3RD PLACE", "4TH PLACE"][HU.place];
+    showToast(word, time.toFixed(2) + " s", OLY.active ? "TAP FOR THE JAVELIN" : "TAP FOR RESULTS");
+    const n = k => HU.grades.filter(g => g === k).length;
+    $("tStats").innerHTML = "PERFECT " + n("P") + "  ·  GOOD " + n("G") + "  ·  OK " + n("O") + "  ·  <b>HIT " + (n("H") + n("N")) + "</b>"; $("tStats").hidden = false;
+    setTimeout(() => sfx.cheer(Math.max(0, Math.min(1, (15.5 - time) / 3.2)), rec), 120);
+    renderHud();
+  }
+  function huUpdate(dt) {
+    HU.frameAt = performance.now();
+    if (state === "humarks") { HU.timer += dt; if (HU.timer > 1.4) { state = "huset"; HU.timer = 0; HU.setDelay = rand(1.0, 2.8); setPrompt("SET…"); } }
+    else if (state === "huset") { HU.timer += dt; if (HU.timer >= HU.setDelay) { state = "hugun"; HU.t = 0; HU.flash = .25; sfx.gun(); setPrompt("GO! TAP ANYWHERE"); setGo("TAP!"); setCue(true); } }
+    const racing = state === "hugun" || state === "hurace" || (state === "hudone" && !HU.dq);
+    if (racing) {
+      HU.t += dt;
+      if (state === "hugun" && HU.t >= HUK.GUN_WAIT) huGo(HUK.GUN_WAIT);
+      if (HU.started && HU.t >= HU.go) {
+        if (HU.time === null) {
+          HU.v += (HUK.VMAX + HU.b - HU.v) / ((HU.t - HU.go) < 2.5 ? .9 : .5) * dt; HU.b *= Math.exp(-dt / HUK.DECAY);
+        } else HU.v = Math.max(0, HU.v - 5 * dt);
+        const px = HU.x; HU.x += HU.v * dt;
+        // no jump: run straight through the hurdle
+        if (HU.time === null && !HU.jump && HU.ni < 10 && HU.x >= HU_POS[HU.ni] - .45) huResolve("N");
+        if (HU.jump && HU.x - HU.jump.x0 >= HUK.FLIGHT) { HU.jump = null; puff(HU.x - .2, .05, 3, 2, "#e98a6c"); if (HU.ni < 10) setPrompt(""); }
+        if (!HU.jump) { const si = Math.floor(HU.x * 1.05); if (si !== stepIdx && HU.v > .5) { stepIdx = si; sfx.step(HU.v); } }
+        if (HU.time === null && HU.x >= 110) { HU.time = HU.t - dt + dt * (110 - px) / Math.max(1e-6, HU.x - px); huFinish(); }
+      }
+      HU.rivals.forEach(r => {
+        const tt = HU.t * HUGHOST.T / r.T, i = tt / HUGHOST.dt;
+        const i0 = Math.min(HUGHOST.xs.length - 1, Math.floor(i)), i1 = Math.min(HUGHOST.xs.length - 1, i0 + 1);
+        const nx = HUGHOST.xs[i0] + (HUGHOST.xs[i1] - HUGHOST.xs[i0]) * (i - Math.floor(i));
+        r.v = Math.max(0, (nx - r.x) / dt); r.x = nx; r.started = tt >= HUGHOST.start;
+      });
+      if (state === "hurace" && HU.time === null) $("hudBest").textContent = Math.max(0, HU.t).toFixed(2);
+    }
+    HU.knocked.forEach((k, i) => { if (k !== undefined) HU.knocked[i] = Math.min(1, k + dt * 4); });
+    aSpeed = HU.v;
+    HU.msgT = Math.max(0, HU.msgT - dt); HU.flash = Math.max(0, HU.flash - dt);
+    parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= 4 * dt; p.life -= dt * 1.6; if (p.y < 0) p.y = 0; });
+    parts = parts.filter(p => p.life > 0);
+    shake = Math.max(0, shake - dt);
+    const tp = Math.min(H / 8.5, W / 16), tx = Math.max(HU.x, 0) + (W / tp) * .18;
+    const snap = state === "huready";
+    ppm = tp; camX = snap ? tx : camX + (tx - camX) * (1 - Math.exp(-dt * 6));
+  }
+  function renderHuHud() {
+    $("hudBestK").textContent = "TIME";
+    $("hudBest").textContent = HU.time !== null ? HU.time.toFixed(2) : HU.started ? Math.max(0, HU.t).toFixed(2) : "0.00";
+    const n = k => HU.grades.filter(g => g === k).length;
+    const vals = [HU.rt === null ? "—" : HU.rt.toFixed(2), HU.ni + "/10", String(n("P") + n("G")), String(n("H") + n("N"))];
+    ["START", "HURDLE", "CLEAN", "HITS"].forEach((lab, i) => {
+      const p = $("p" + i); p.querySelector("b").textContent = lab; p.querySelector("span").textContent = vals[i];
+      p.classList.toggle("foul", i === 3 && n("H") + n("N") > 0); p.classList.toggle("now", false);
+    });
+  }
+  function huLift(r) { // ghosts hop each hurdle
+    for (const h of HU_POS) { const u = (r.x - (h - HUK.IDEAL)) / HUK.FLIGHT; if (u > 0 && u < 1) return HUK.LIFT * Math.sin(Math.PI * u); }
+    return 0;
+  }
+  function drawHurdle(px, base, knock) {
+    const u = ppm, h = HUK.HH * u, ang = (knock || 0) * 1.35;
+    ctx.save(); ctx.translate(px, base); ctx.rotate(ang);
+    ctx.strokeStyle = "#1b2340"; ctx.lineWidth = Math.max(3, u * .07); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-.55 * u, 0); ctx.lineTo(.05 * u, 0); ctx.stroke();
+    const bw = Math.max(5, u * .12), bh = Math.max(8, u * .22);
+    ctx.fillStyle = "#fff"; ctx.fillRect(-bw / 2, -h - 2, bw, bh);
+    ctx.fillStyle = "#1b2340"; ctx.fillRect(-bw / 2, -h - 2 + bh * .4, bw, bh * .25);
+    ctx.restore();
+  }
+  function drawHu(sx, gy) {
+    const band = H - gy, top = gy + band * .06, laneH = (band * .94) / 4;
+    ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, band + 20);
+    ctx.fillStyle = "#d9523a"; ctx.fillRect(-20, top, W + 40, band);
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    for (let i = 0; i <= 4; i++) ctx.fillRect(-20, top + laneH * i - 1, W + 40, 2);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = Math.max(11, Math.min(18, laneH * .6)) + "px 'Lilita One', Impact, sans-serif";
+    for (let x = 10; x < 110; x += 10) {
+      const px = sx(x); if (px < -30 || px > W + 30) continue;
+      ctx.fillStyle = "rgba(255,255,255,.3)"; ctx.fillRect(px - 1, top, 2, band);
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillText(x + "m", px, gy + band * .03 + 1);
+    }
+    const s0 = sx(0); if (s0 > -40 && s0 < W + 40) { ctx.fillStyle = "#fff"; ctx.fillRect(s0 - 3, top, 6, band); }
+    const f = sx(110);
+    if (f > -80 && f < W + 80) {
+      const sq = Math.max(4, laneH / 3);
+      for (let y = top, r = 0; y < H; y += sq, r++) for (let c = 0; c < 2; c++) { ctx.fillStyle = (r + c) % 2 ? "#1b2340" : "#fff"; ctx.fillRect(f - sq + c * sq, y, sq, sq); }
+      const gh = 3.2 * ppm;
+      ctx.fillStyle = "#1b2340"; ctx.fillRect(f - 3, gy - gh, 6, gh + band * .06);
+      ctx.fillStyle = "#ff4f5e"; ctx.fillRect(f - 2.2 * ppm, gy - gh - .8 * ppm, 4.4 * ppm, .8 * ppm);
+      ctx.fillStyle = "#fff"; ctx.font = Math.max(12, ppm * .55) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillText("FINISH", f, gy - gh - .4 * ppm);
+    }
+    // take-off zone for your next hurdle: green where the perfect take-off is
+    const pbase = top + laneH * 3.85;
+    if (HU.ni < 10 && state === "hurace" && HU.time === null) {
+      const hx = HU_POS[HU.ni], z0 = sx(hx - HUK.IDEAL - 1.1), z1 = sx(hx - HUK.IDEAL + 1.1);
+      if (z1 > 0 && z0 < W) {
+        const gr = ctx.createLinearGradient(z0, 0, z1, 0);
+        gr.addColorStop(0, "rgba(255,79,94,0)"); gr.addColorStop(.18, "rgba(255,205,46,.75)"); gr.addColorStop(.5, "rgba(46,196,182,.95)");
+        gr.addColorStop(.82, "rgba(255,205,46,.75)"); gr.addColorStop(1, "rgba(255,79,94,0)");
+        const ly = top + laneH * 3 + 2; // your whole lane
+        ctx.fillStyle = gr; ctx.fillRect(z0, ly, z1 - z0, H - ly);
+        ctx.fillStyle = "#fff"; const zc = sx(hx - HUK.IDEAL); ctx.fillRect(zc - 2, ly, 4, H - ly);
+      }
+    }
+    // lanes, far lane first: hurdles, then the runner in that lane
+    const lanes = HU.rivals.map((r, i) => ({ r, i })).concat([{ r: HU, i: 3 }]);
+    lanes.forEach(({ r, i }) => {
+      const base = top + laneH * (i + .85), me = r === HU;
+      HU_POS.forEach((h, k) => { const px = sx(h); if (px > -60 && px < W + 60) drawHurdle(px, base, me ? HU.knocked[k] : 0); });
+      const started = me ? HU.started && HU.t >= HU.go : r.started;
+      const pose = started ? 0 : (state === "humarks" || state === "huready" ? 1 : 2);
+      if (me && HU.jump) {
+        const u = Math.min(1, (HU.x - HU.jump.x0) / HUK.FLIGHT), lift = HUK.LIFT * Math.sin(Math.PI * u);
+        const p = u < .3 ? mixPose(HJP.S1, HUP, u / .3) : u > .72 ? mixPose(HUP, HJP.S1, (u - .72) / .28) : HUP;
+        drawFig(sx(HU.x), base - lift * ppm, base, p);
+      } else drawRunner(sx(r.x), base - (me ? 0 : huLift(r)) * ppm, ppm, r.x * 2.2, (me ? HU.v : r.v) > .5, me ? "#2a64e0" : r.kit, pose);
+      const tag = me ? "YOU" : r.name + "  " + r.T.toFixed(2);
+      const tx = sx(r.x) + .2 * ppm, ty = base - 2.15 * ppm;
+      ctx.font = "800 " + Math.max(10, Math.min(14, ppm * .32)) + "px Nunito, sans-serif";
+      const w = ctx.measureText(tag).width + 10;
+      ctx.fillStyle = me ? "rgba(42,100,224,.9)" : "rgba(27,35,64,.75)"; ctx.fillRect(tx - w / 2, ty - 9, w, 18);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tag, tx, ty + 1);
+    });
+    parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life) * .7; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(sx(p.x), pbase - p.y * ppm, p.r * ppm * (1.6 - p.life * .6), 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    if (state === "hugun") { // gun ring, as in the 100m
+      const left = Math.max(0, 1 - HU.t / HUK.GUN_WAIT), cx = W / 2, cy = H * .36, rr = Math.min(W, H) * .11;
+      ctx.lineWidth = 8; ctx.strokeStyle = "rgba(27,35,64,.5)"; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.stroke();
+      ctx.strokeStyle = "#ffcd2e"; ctx.beginPath(); ctx.arc(cx, cy, rr, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.font = Math.round(rr * .75) + "px 'Lilita One', Impact, sans-serif";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.strokeText("TAP!", cx, cy + 2); ctx.fillText("TAP!", cx, cy + 2);
+    }
+    if (HU.msgT > 0) {
+      ctx.globalAlpha = Math.min(1, HU.msgT * 2);
+      ctx.font = Math.round(Math.min(W, H) * .075) + "px 'Lilita One', Impact, sans-serif";
+      ctx.fillStyle = /^(CLIPPED|NO|SLOW)/.test(HU.msg) ? "#ff4f5e" : HU.msg === "OK" ? "#fff" : "#ffcd2e";
+      ctx.lineWidth = 6; ctx.strokeStyle = "#1b2340"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const y = H * .36 - (1.1 - HU.msgT) * 10; ctx.strokeText(HU.msg, W / 2, y); ctx.fillText(HU.msg, W / 2, y);
+      ctx.globalAlpha = 1;
+    }
+    if (HU.flash > 0) { ctx.fillStyle = "rgba(255,255,255," + (HU.flash * 3).toFixed(2) + ")"; ctx.fillRect(-20, -20, W + 40, H + 40); }
+  }
+
   // ---------- draw
   const CROWD = ["#ff4f5e", "#ffcd2e", "#2ec4b6", "#ffffff", "#7c5cff", "#ff9f43"];
   function draw() {
@@ -2095,7 +2337,7 @@ li.fresh .r { color: #fff; }
       for (let x = o - sp; x < W + sp; x += sp) {
         const idx = Math.floor((x - off) / sp) + r * 7;
         ctx.fillStyle = CROWD[((idx * 2654435761) >>> 0) % CROWD.length];
-        const bob = state === "landed" || state === "sdone" || state === "llanded" || (state === "hresult" && HJ.lastClear) || (state === "r4done" && !R4.dq) ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
+        const bob = state === "landed" || state === "sdone" || state === "llanded" || (state === "hresult" && HJ.lastClear) || (state === "r4done" && !R4.dq) || (state === "hudone" && !HU.dq) ? Math.abs(Math.sin(time * 9 + idx)) * 3 : 0;
         ctx.beginPath(); ctx.arc(x, st + 8 + r * rh - bob, 3.2, 0, 7); ctx.fill();
       }
     }
@@ -2111,6 +2353,7 @@ li.fresh .r { color: #fff; }
     if (mode === "longjump") { drawLJ(sx, gy); return; }
     if (mode === "highjump") { drawHJ(sx, gy); return; }
     if (mode === "r400") { drawR4(sx, gy); return; }
+    if (mode === "hurdles") { drawHu(sx, gy); return; }
     // ground: grass then runway lane
     ctx.fillStyle = "#43b04e"; ctx.fillRect(-20, gy, W + 40, gh);
     ctx.fillStyle = "#3aa045";
